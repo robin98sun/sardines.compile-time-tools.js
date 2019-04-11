@@ -1,0 +1,38 @@
+{
+  "name": "shoal",
+  "version": "0.0.1",
+  "description": "Shoal.js is part of the sardines.io project, providing platform support for sardines.js",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "mocha test/index.js",
+    "buildDev": "webpack --config ./conf/webpack.dev.js",
+    "dev": "node ./lib/dev/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/robin-98/shoal.js.git"
+  },
+  "keywords": [
+    "Free-to-Decompose",
+    "distributed",
+    "framework",
+    "FaaS"
+  ],
+  "author": {
+    "name": "Robin Sun",
+    "email": "robin@naturewake.com"
+  },
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/robin-98/shoal.js/issues"
+  },
+  "homepage": "https://github.com/robin-98/shoal.js#readme",
+  "devDependencies": {
+    "ts-loader": "^5.3.3",
+    "webpack": "^4.29.6",
+    "webpack-cli": "^3.3.0"
+  },
+  "dependencies": {
+    "typescript": "^3.4.3"
+  }
+}
