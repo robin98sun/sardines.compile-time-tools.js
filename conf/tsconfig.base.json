@@ -1,17 +1,25 @@
 {
+    "compileOnSave": true,
     "compilerOptions": {
         "module": "commonjs",
         "strict": true,
         "removeComments": true,
         "preserveConstEnums": true,
-        "sourceMap": true,
+        "sourceMap": false,
         "experimentalDecorators": true,
         "alwaysStrict": true,
         "noImplicitReturns": true,
         "declaration": true,
-        "declarationDir": "./declarations",
         "declarationMap": true,
         "noUnusedLocals": true,
-        "noUnusedParameters": true
-    }
+        "noUnusedParameters": true,
+        "target": "es5",
+        "lib": ["es2015"]
+    },
+    "include": [
+        "../src/**/*"
+    ],
+    "exclude": [
+        "../node_modules"
+    ]
 }

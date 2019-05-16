@@ -1,38 +1,46 @@
 {
-  "name": "shoal",
-  "version": "0.0.1",
-  "description": "Shoal.js is part of the sardines.io project, providing platform support for sardines.js",
-  "main": "src/index.js",
-  "scripts": {
-    "test": "mocha test/index.js",
-    "buildDev": "webpack --config ./conf/webpack.dev.js",
-    "dev": "node ./lib/dev/index.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/robin-98/shoal.js.git"
-  },
-  "keywords": [
-    "Free-to-Decompose",
-    "distributed",
-    "framework",
-    "FaaS"
-  ],
-  "author": {
-    "name": "Robin Sun",
-    "email": "robin@naturewake.com"
-  },
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/robin-98/shoal.js/issues"
-  },
-  "homepage": "https://github.com/robin-98/shoal.js#readme",
-  "devDependencies": {
-    "ts-loader": "^5.3.3",
-    "webpack": "^4.29.6",
-    "webpack-cli": "^3.3.0"
-  },
-  "dependencies": {
-    "typescript": "^3.4.3"
-  }
+    "author": {
+        "email": "robin@naturewake.com",
+        "name": "Robin Sun"
+    },
+    "bugs": {
+        "url": "https://github.com/robin-98/sardines.compiler.js/issues"
+    },
+    "dependencies": {
+        "@types/node": "^12.0.2",
+        "sardines-utils": "file:../sardines.utils.js",
+        "typescript": "^3.4.5"
+    },
+    "description": "sardines.compiler.js is part of the sardines.io project",
+    "devDependencies": {
+        "mocha": "^6.1.4",
+        "ts-loader": "^5.4.3",
+        "webpack": "^4.30.0",
+        "webpack-cli": "^3.3.1"
+    },
+    "homepage": "https://github.com/robin-98/sardines.compiler.js#readme",
+    "keywords": [
+        "Free-to-Decompose",
+        "distributed",
+        "framework",
+        "FaaS"
+    ],
+    "license": "ISC",
+    "main": "src/index.js",
+    "name": "sardines-compiler",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/robin-98/sardines.compiler.js.git"
+    },
+    "scripts": {
+        "buildProd": "npm run clearProd && tsc --build conf/tsconfig.prod.json",
+        "prod": "npm run buildProd && node lib/prod/index.js",
+        "buildDev": "npm run clearDev && tsc --build conf/tsconfig.dev.json",
+        "dev": "npm run buildDev && node lib/dev/index.js",
+        "test": "mocha test/index.js",
+        "clear": "rm -rf lib/*",
+        "clearDev": "rm -rf lib/dev",
+        "clearProd": "rm -rf lib/prod"
+    },
+    "version": "0.0.1"
 }
