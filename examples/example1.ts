@@ -79,9 +79,9 @@ const someOtherFunc = function(settings: RepositorySettings) {
     console.log(settings)
 }
 
-export const x = someOtherFunc
+export const x = someOtherFunc // VariableStatement
 
-export const y = Repository
+export const y = Repository     // VariableStatement
 
 export const obj = {
     x: someArrowFunc,

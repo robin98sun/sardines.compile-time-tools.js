@@ -31,71 +31,88 @@ import { readFileSync } from "fs"
 import * as ts from "typescript"
 
 export function gatherExports(sourceFile: ts.SourceFile) {
+    interface IdentifierSyntax { 
+        name: string
+        type: ts.SyntaxKind
+        isExport: boolean
+        text: string
+    }
+    const idnetifiers: Map<string, IdentifierSyntax> = new Map<string, IdentifierSyntax>()
+    // const exportSyntexes: Array<{name: string, type: ts.SyntaxKind, text: string}> = new Array<{name: string, type: ts.SyntaxKind, text: string}>()
 
-    analyzeNode(sourceFile);
-
-    // const classes: string[] = []
-    // const functions: string[] = []
-
-    function analyzeNode(node: ts.Node) {
-        if (node.kind === ts.SyntaxKind.ExportKeyword) {
-            // export something
-            if (!node.parent) {
-                console.log('      =>', ts.SyntaxKind[node.kind])
-            }
-            console.log(ts.SyntaxKind[node.parent.kind], node.parent.getText())
-            analyzeExportClause(node.parent)
-        } else if (node.kind === ts.SyntaxKind.ExportAssignment){
-            // export default
-            console.log('     ->', ts.SyntaxKind[node.kind])
-            // if (node.kind === ts.SyntaxKind.VariableDeclaration) {
-                for (let item of node.getChildren()) {
-                    console.log(`  -- item kind: ${ts.SyntaxKind[item.kind]}, text: ${item.getText()}`)
-                    if (item.kind === ts.SyntaxKind.ObjectLiteralExpression) {
-                        analyzeExportClause(item)
-                    }
+    const checkExportSyntax = (node: ts.Node):boolean => {
+        if (node.kind === ts.SyntaxKind.ExportKeyword) return true
+        let result = false
+        if (node.getChildCount() > 0) {
+            for (let child of node.getChildren()) {
+                if (checkExportSyntax(child)) {
+                    result = true
+                    break
                 }
-            // }
+            }
         }
-        ts.forEachChild(node, analyzeNode)
+        return result
     }
 
-    function analyzeExportClause(node: ts.Node) {
+    const analyzeNode = (node: ts.Node) => {
+        if (node.kind === ts.SyntaxKind.SourceFile) {
+            ts.forEachChild(node, analyzeNode)
+        }
+        
+        let name = '', syntax: IdentifierSyntax|null = null, isExport = checkExportSyntax(node), text = node.getText().replace(/export +/g, '')
         switch (node.kind) {
             case ts.SyntaxKind.VariableStatement:
-                // console.log('================================')
-                analyzeExportClause((node as ts.VariableStatement).declarationList)
-                // break;
-            case ts.SyntaxKind.VariableDeclarationList:
-                // for (let child of (node as ts.VariableDeclarationList).declarations) {
-                //     console.log('--------------------------------')
-                //     console.log(`name: ${(child as ts.VariableDeclaration).name.getFullText()}`)
-                //     console.log(`${ts.SyntaxKind[(child as ts.VariableDeclaration).getLastToken()!.kind]}`)
-                //     for (let comp of (child as ts.VariableDeclaration).getChildren()) {
-                //         console.log(`component type: ${ts.SyntaxKind[comp.kind]}, number of children: ${comp.getChildCount()}, text: ${comp.getFullText()}`)
-                //     }
-                // }
-                // break
-            case ts.SyntaxKind.ExportKeyword:
-                // if (node.parent) {
-                //     console.log('================================')
-                //     console.log(`parent kind: ${ts.SyntaxKind[node.parent.kind]}, parent full text: ${node.parent.getFullText()}`)
-                // }
-                // break
-            case ts.SyntaxKind.PropertyAssignment:
-            case ts.SyntaxKind.SyntaxList:
-            case ts.SyntaxKind.ObjectLiteralExpression:
-            default:
-                for (let item of node.getChildren()) {
-                    console.log(    '---', ts.SyntaxKind[item.kind], item.getText())
-                    // if (item.kind === ts.SyntaxKind.SyntaxList) {
-                    if (item.getChildCount() > 1) {
-                        analyzeExportClause(item)
+                for (let item of (node as ts.VariableStatement).declarationList.declarations) {
+                    analyzeNode(item)
+                }
+                break
+            case ts.SyntaxKind.ExportAssignment:
+                // Export default
+                break
+            case ts.SyntaxKind.InterfaceDeclaration:
+                name = (node as ts.InterfaceDeclaration).name.text
+                syntax = { name, isExport, type: node.kind, text }
+                break
+            case ts.SyntaxKind.ClassDeclaration:
+                name = (node as ts.ClassDeclaration).name!.text
+                syntax = { name, isExport, type: node.kind, text}
+
+                break
+            case ts.SyntaxKind.FunctionDeclaration:
+                name = (node as ts.FunctionDeclaration).name!.text
+                syntax = { name, isExport, type: node.kind, text}
+                break
+            case ts.SyntaxKind.VariableDeclaration:
+                name = (node as ts.VariableDeclaration).name.getText()
+                let isValueSyntax = false
+                for (let item of (node as ts.VariableDeclaration).getChildren()) {
+                    if (isValueSyntax) {
+                        const sourceId = item.getText()
+                        if (item.kind === ts.SyntaxKind.Identifier && idnetifiers.has(sourceId)) {
+                            const tmpSyntax = idnetifiers.get(sourceId)
+                            tmpSyntax!.name = name
+                            tmpSyntax!.isExport = isExport
+                            idnetifiers.set(name, tmpSyntax!)
+                        } else if (item.kind !== ts.SyntaxKind.Identifier) {
+                            idnetifiers.set(name, { name, isExport, type: item.kind, text: sourceId})
+                        }
+                        isValueSyntax = false
+                    } else if (item.kind === ts.SyntaxKind.FirstAssignment) {
+                        isValueSyntax = true
                     }
                 }
+                break
+            default:
                 break;
         }
+        if (syntax) {
+            idnetifiers.set(name, syntax!)
+            // if (isExport(node)) exportSyntexes.push(syntax)
+        }
     }
+
+    analyzeNode(sourceFile);
+    console.log(idnetifiers)
 }
 
 files.forEach(fileName => {
