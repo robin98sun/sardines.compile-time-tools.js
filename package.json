@@ -26,7 +26,8 @@
         "FaaS"
     ],
     "license": "ISC",
-    "main": "src/index.js",
+    "bin": "lib/prod/sardine_compiler.js",
+    "main": "lib/prod/sardine_compiler.js",
     "name": "sardines-compiler",
     "repository": {
         "type": "git",
@@ -34,9 +35,9 @@
     },
     "scripts": {
         "buildProd": "npm run clearProd && tsc --build conf/tsconfig.prod.json",
-        "prod": "npm run buildProd && node lib/prod/index.js",
+        "prod": "npm run buildProd && node lib/prod/sardine_compiler.js",
         "buildDev": "npm run clearDev && tsc --build conf/tsconfig.dev.json",
-        "dev": "npm run buildDev && node lib/dev/index.js",
+        "dev": "npm run buildDev && node lib/dev/sardine_compiler.js",
         "test": "mocha test/index.js",
         "clear": "rm -rf lib/*",
         "clearDev": "rm -rf lib/dev",

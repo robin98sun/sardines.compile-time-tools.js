@@ -83,6 +83,8 @@ export const x = someOtherFunc // VariableStatement
 
 export const y = Repository     // VariableStatement
 
+export const z = someArrowFunc // VariableStatement
+
 export const obj = {
     x: someArrowFunc,
     y: Repository,
