@@ -67,11 +67,11 @@ class Repository {
     }
 }
 
-export async function someFunc(settings: RepositorySettings) {
+export async function someFunc(settings: RepositorySettings, others: any[] = []) {
     console.log(settings)
 }
 
-export const someArrowFunc = async (settings: RepositorySettings) => {
+export const someArrowFunc = async (settings: RepositorySettings[]|RepositorySettings|null) => {
     console.log(settings)
 }
 

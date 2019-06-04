@@ -40,28 +40,28 @@ if (params['print']) {
 }
 
 if (params['only-validate']) {
-    console.log(`only to validate the files`)
+    if (params.verbose) console.log(`only to validate the files`)
     params.only_validate = true    
 } else {
     params.only_validate = false
 }
 
 if (params['validate']) {
-    console.log(`validate the files and halt whenever encounter an error`)
+    if (params.verbose) console.log(`validate the files and halt whenever encounter an error`)
     params.validate = true    
 } else {
     params.validate = false
 }
 
 if (params['recompile']) {
-    console.log(`recompiling`)
+    if (params.verbose) console.log(`recompiling`)
     params.recompile = true
 } else {
     params.recompile = false
 }
 
 if (params['reverse']) {
-    console.log(`redo previous compiled files`)
+    if (params.verbose) console.log(`redo previous compiled files`)
     params.reverse = true
 } else {
     params.reverse = false
@@ -82,11 +82,14 @@ interface IdentifierSyntax {
     isExport: boolean
     isAsync: boolean
     text: string
+    param?: IdentifierSyntax[]|null
+    typeRef?: string[]
 }
 
-export function gatherExports(sourceFile: ts.SourceFile): Map<string, IdentifierSyntax> {
+export function gatherExports(sourceFile: ts.SourceFile): [Map<string, IdentifierSyntax>, string[]] {
     
     const idnetifiers: Map<string, IdentifierSyntax> = new Map<string, IdentifierSyntax>()
+    const referencedTypes: string[] = []
 
     const storeSyntax = (syntax: IdentifierSyntax) => {
         if (syntax.name) {
@@ -97,6 +100,11 @@ export function gatherExports(sourceFile: ts.SourceFile): Map<string, Identifier
             } else {
                 idnetifiers.set(syntax.name, syntax!)
             }
+        }
+    }
+    const storeReferencedTypes = (types: string[]) => {
+        for (let t of types) {
+            if (referencedTypes.indexOf(t) <0) referencedTypes.push(t)
         }
     }
 
@@ -114,6 +122,78 @@ export function gatherExports(sourceFile: ts.SourceFile): Map<string, Identifier
         return result
     }
 
+    const printSyntax = (node: ts.Node, prefix: string = '') => {
+        console.log(prefix, ts.SyntaxKind[node.kind], node.getText())
+        for (let item of node.getChildren()){
+            printSyntax(item, prefix + '    ')
+        }
+    }
+
+    const getTypeRefInParam = (param: ts.Node): string[] => {
+        const result = []
+        for (let item of param.getChildren()) {
+            if (item.kind === ts.SyntaxKind.TypeReference) {
+                result.push(item.getText())
+            } else {
+                const subResult = getTypeRefInParam(item)
+                for (let t of subResult) {
+                    if (result.indexOf(t) < 0) {
+                        result.push(t)
+                    }
+                }
+            }
+        }
+        return result
+    }
+
+    const getParamSyntax = (node: ts.Node) => {
+        let paramSyntax = null, pre = null, preBeforePre = null
+        for (let item of node.getChildren()) {
+            if (item.kind === ts.SyntaxKind.CloseParenToken) {
+                if (pre && pre.kind !== ts.SyntaxKind.OpenParenToken && preBeforePre && preBeforePre.kind === ts.SyntaxKind.OpenParenToken) {
+                    paramSyntax = pre
+                } 
+                break
+            }
+            preBeforePre = pre
+            pre = item
+        }
+        const params = []
+        if (paramSyntax) {
+            for (let item of (paramSyntax as ts.SyntaxList).getChildren()) {
+                if (item.kind === ts.SyntaxKind.Parameter) {
+                    let paramName = null
+                    for (let subItem of (item as ts.ParameterDeclaration).getChildren()) {
+                        if (subItem.kind === ts.SyntaxKind.Identifier) {
+                            paramName = subItem.getText()
+                        }
+                    }
+                    if (paramName) {
+                        const paramObj: IdentifierSyntax = {
+                            name: paramName,
+                            type: item.kind,
+                            typeStr:ts.SyntaxKind[item.kind],
+                            isExport: false,
+                            isAsync: false,
+                            text: item.getText()
+                        }
+                        params.push(paramObj)
+                    }
+                }
+            }
+            return params
+        }
+        return null
+    }
+
+    const parseParamsIntoSyntax = (node: ts.Node, syntax: IdentifierSyntax) => {
+        syntax.param = getParamSyntax(node)
+        if (syntax.param) {
+            syntax.typeRef = getTypeRefInParam(node)
+            if (syntax.typeRef!.length > 0) storeReferencedTypes(syntax.typeRef!)
+        }
+    }
+
     const analyzeNode = (node: ts.Node) => {
         if (node.kind === ts.SyntaxKind.SourceFile) {
             ts.forEachChild(node, analyzeNode)
@@ -124,7 +204,7 @@ export function gatherExports(sourceFile: ts.SourceFile): Map<string, Identifier
             isAsync = false, 
             isExport = checkSyntaxType(node), 
             text = node.getText().replace(/export +/g, ''),
-            syntax = { name, isAsync, isExport, type: node.kind, typeStr: ts.SyntaxKind[node.kind], text }
+            syntax: IdentifierSyntax = { name, isAsync, isExport, type: node.kind, typeStr: ts.SyntaxKind[node.kind], text } 
         switch (node.kind) {
             case ts.SyntaxKind.VariableStatement:
                 for (let item of (node as ts.VariableStatement).declarationList.declarations) {
@@ -143,14 +223,14 @@ export function gatherExports(sourceFile: ts.SourceFile): Map<string, Identifier
             case ts.SyntaxKind.ArrowFunction:
                 syntax.name = (node as ts.ArrowFunction).name
                 syntax.isAsync = checkSyntaxType(node, ts.SyntaxKind.AsyncKeyword)
-                // syntax.isExport = checkSyntaxType(node, ts.SyntaxKind.AsyncKeyword)
                 syntax.isExport = checkSyntaxType(node, ts.SyntaxKind.ExportKeyword)
+                parseParamsIntoSyntax(node, syntax)
                 break
-            case ts.SyntaxKind.FunctionDeclaration:
+            case ts.SyntaxKind.FunctionDeclaration:  case ts.SyntaxKind.FunctionExpression:
                 syntax.name = (node as ts.FunctionDeclaration).name!.text
                 syntax.isAsync = checkSyntaxType(node, ts.SyntaxKind.AsyncKeyword)
-                // syntax.isExport = checkSyntaxType(node, ts.SyntaxKind.AsyncKeyword)
                 syntax.isExport = checkSyntaxType(node, ts.SyntaxKind.ExportKeyword)
+                parseParamsIntoSyntax(node, syntax)
                 break
             case ts.SyntaxKind.VariableDeclaration:
                 isExport = checkSyntaxType(node.parent.parent) // check the VariableStatement
@@ -166,7 +246,11 @@ export function gatherExports(sourceFile: ts.SourceFile): Map<string, Identifier
                             storeSyntax(tmpSyntax)
                         } else if (item.kind !== ts.SyntaxKind.Identifier) {
                             isAsync = checkSyntaxType(item, ts.SyntaxKind.AsyncKeyword)
-                            storeSyntax({ name, isAsync, isExport, type: item.kind, typeStr: ts.SyntaxKind[item.kind], text: sourceId})
+                            const itemSyntax: IdentifierSyntax = { name, isAsync, isExport, type: item.kind, typeStr: ts.SyntaxKind[item.kind], text: sourceId}
+                            if (item.kind === ts.SyntaxKind.FunctionExpression || item.kind === ts.SyntaxKind.ArrowFunction) {
+                                parseParamsIntoSyntax(item, itemSyntax)
+                            }
+                            storeSyntax(itemSyntax)
                         }
                         isValueSyntax = false
                     } else if (item.kind === ts.SyntaxKind.FirstAssignment) {
@@ -191,7 +275,8 @@ export function gatherExports(sourceFile: ts.SourceFile): Map<string, Identifier
         }
         item = iterator.next()
     }
-    return idnetifiers
+
+    return [idnetifiers, referencedTypes]
 }
 
 const processedFiles: {[key: string]: boolean} = {}
@@ -271,7 +356,7 @@ const processFile = (filePath: string) => {
             ts.ScriptTarget.ES2015,
             /*setParentNodes */ true
         );
-        const identifiers = gatherExports(sourceFile);
+        const [identifiers, referencedTypes] = gatherExports(sourceFile);
 
         // generate compiled file to replace original file
         let line = `import * as origin from './${sardineFileName}'\n`
@@ -282,6 +367,18 @@ const processFile = (filePath: string) => {
             console.log(line)
         }
 
+        // import types referenced by source code
+        for (let t of referencedTypes) {
+            if (!identifiers.has(t)) {
+                throw `source file need to export type reference '${t}'`
+            } else {
+                const line = `import { ${t} } from './${sardineFileName}'\n`
+                if (!params.only_validate) {
+                    fs.appendFileSync(intermediateFilePath, line)
+                }
+            }
+        }
+
         const iterator = identifiers.keys()
         let key = iterator.next()
         while (!key.done) {
@@ -289,13 +386,13 @@ const processFile = (filePath: string) => {
             if (item.type === ts.SyntaxKind.InterfaceDeclaration) {
                 line = `export { ${item.name} } from './${sardineFileName}'\n`
             } else {
-                line = `export const ${item.name} = async (...params: any[]) => {\n` + 
+                line = `export const ${item.name} = async (${item.param?item.param.map(x => x.text).join(', '):''}) => {\n` + 
                 // TODO: generate service name
                 // register service on the root node
                 // check whether the service should run locally or remotely
 
                 // run service locally
-                `   return ${item.isAsync? 'await' : ''} origin.${item.name}(...params)\n` +
+                `   return ${item.isAsync? 'await' : ''} origin.${item.name}(${item.param?item.param.map(x => x.name).join(', '):''})\n` +
                 `}\n`
             }
             if (!params.only_validate) {
