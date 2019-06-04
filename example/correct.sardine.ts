@@ -1,4 +1,10 @@
-import { Storage, StorageSettings, PostgresDatabaseStructure  } from '../builtin_services/storage'
+import { 
+    Storage, 
+    Storage as TEstStorage,
+    StorageSettings, 
+    StorageSettings as TEstStSt,
+    PostgresDatabaseStructure 
+} from '../builtin_services/storage'
 import * as utils from 'sardines-utils'
 
 const postgresDBStruct: PostgresDatabaseStructure = {
@@ -77,6 +83,10 @@ export const someArrowFunc = async (settings: RepositorySettings[]|RepositorySet
 
 const someOtherFunc = function(settings: RepositorySettings) {
     console.log(settings)
+}
+
+export const t = async (s: TEstStSt) => {
+    console.log(s)
 }
 
 export const x = someOtherFunc // VariableStatement

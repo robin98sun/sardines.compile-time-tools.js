@@ -34,14 +34,16 @@
         "url": "git+https://github.com/robin-98/sardines.compiler.js.git"
     },
     "scripts": {
-        "buildProd": "npm run clearProd && tsc --build conf/tsconfig.prod.json",
+        "buildProd": "npm run clearProd && tsc --build conf/tsconfig.prod.json && npm run makeExecProd",
         "prod": "npm run buildProd && node lib/prod/index.js",
-        "buildDev": "npm run clearDev && tsc --build conf/tsconfig.dev.json",
+        "buildDev": "npm run clearDev && tsc --build conf/tsconfig.dev.json && npm run makeExecDev",
         "dev": "npm run buildDev && node lib/dev/index.js",
         "test": "mocha test/index.js",
         "clear": "rm -rf lib/*",
         "clearDev": "rm -rf lib/dev",
-        "clearProd": "rm -rf lib/prod"
+        "clearProd": "rm -rf lib/prod",
+        "makeExecProd": "file=lib/prod/index.js; { echo '#!/usr/bin/env node'; cat $file; } > ${file}.tmp && mv ${file}.tmp $file && chmod a+x $file",
+        "makeExecDev": "file=lib/dev/index.js; { echo '#!/usr/bin/env node'; cat $file; } > ${file}.tmp && mv ${file}.tmp $file && chomd a+x $file"
     },
     "version": "0.0.1"
 }

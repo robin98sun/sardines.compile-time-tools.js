@@ -86,10 +86,11 @@ interface IdentifierSyntax {
     typeRef?: string[]
 }
 
-export function gatherExports(sourceFile: ts.SourceFile): [Map<string, IdentifierSyntax>, string[]] {
+export function gatherExports(sourceFile: ts.SourceFile): [Map<string, IdentifierSyntax>, string[], string[]] {
     
     const idnetifiers: Map<string, IdentifierSyntax> = new Map<string, IdentifierSyntax>()
     const referencedTypes: string[] = []
+    const importedIds: string[] = []
 
     const storeSyntax = (syntax: IdentifierSyntax) => {
         if (syntax.name) {
@@ -105,6 +106,14 @@ export function gatherExports(sourceFile: ts.SourceFile): [Map<string, Identifie
     const storeReferencedTypes = (types: string[]) => {
         for (let t of types) {
             if (referencedTypes.indexOf(t) <0) referencedTypes.push(t)
+        }
+    }
+
+    const storeImportedIds = (ids: string[], source:string|null) => {
+        if (!source) return
+        for (let item of ids) {
+            let line = `${item}|${source}`
+            if (importedIds.indexOf(line) < 0) importedIds.push(line)
         }
     }
 
@@ -144,6 +153,34 @@ export function gatherExports(sourceFile: ts.SourceFile): [Map<string, Identifie
             }
         }
         return result
+    }
+
+    const getNamedImports = (node: ts.Node): [string[], string|null] => {
+        const importedIds: string[] = []
+        let source = null, isSource = false
+        for (let item of node.getChildren()) {
+            if (item.kind === ts.SyntaxKind.ImportSpecifier) {
+                const children = item.getChildren()
+                if (children.length ===1) {
+                    importedIds.push(children[0].getText())
+                } else if (children.length === 3 && children[1].kind === ts.SyntaxKind.AsKeyword) {
+                    importedIds.push(children[0].getText() + ':' + children[2].getText())
+                }
+            } else if (item.kind === ts.SyntaxKind.FromKeyword) {
+                isSource = true
+            } else if (item.kind === ts.SyntaxKind.StringLiteral && isSource) {
+                source = item.getText()
+            } else {
+                const [subIds, subSource] = getNamedImports(item)
+                for (let subId of subIds) {
+                    if (importedIds.indexOf(subId) < 0) importedIds.push(subId)
+                }
+                if (subSource) {
+                    if (!source) source = subSource
+                }
+            }
+        }
+        return [importedIds, source]
     }
 
     const getParamSyntax = (node: ts.Node) => {
@@ -211,6 +248,10 @@ export function gatherExports(sourceFile: ts.SourceFile): [Map<string, Identifie
                     analyzeNode(item)
                 }
                 break
+            case ts.SyntaxKind.ImportDeclaration:
+                let [importedIds, source] = getNamedImports(node)
+                storeImportedIds(importedIds, source)
+                break
             case ts.SyntaxKind.ExportAssignment:
                 // Export default
                 throw 'export default is not supported'
@@ -276,7 +317,7 @@ export function gatherExports(sourceFile: ts.SourceFile): [Map<string, Identifie
         item = iterator.next()
     }
 
-    return [idnetifiers, referencedTypes]
+    return [idnetifiers, referencedTypes, importedIds]
 }
 
 const processedFiles: {[key: string]: boolean} = {}
@@ -356,7 +397,7 @@ const processFile = (filePath: string) => {
             ts.ScriptTarget.ES2015,
             /*setParentNodes */ true
         );
-        const [identifiers, referencedTypes] = gatherExports(sourceFile);
+        const [identifiers, referencedTypes, importedIds] = gatherExports(sourceFile);
 
         // generate compiled file to replace original file
         let line = `import * as origin from './${sardineFileName}'\n`
@@ -369,13 +410,40 @@ const processFile = (filePath: string) => {
 
         // import types referenced by source code
         for (let t of referencedTypes) {
+            let line = null
             if (!identifiers.has(t)) {
-                throw `source file need to export type reference '${t}'`
-            } else {
-                const line = `import { ${t} } from './${sardineFileName}'\n`
-                if (!params.only_validate) {
-                    fs.appendFileSync(intermediateFilePath, line)
+                let found = false
+                for (let item of importedIds) {
+                    let [idExp, source] = item.split('|')
+                    let idName = null, alias = null
+                    if (idExp.indexOf(':')>0) {
+                        [idName, alias] = idExp.split(':')
+                    } else {
+                        idName = idExp
+                    }
+                    if (alias) {
+                        if (alias === t) {
+                            found = true
+                            line = `import { ${idName} as ${alias} } from ${source}\n`
+                            break
+                        }
+                    } else {
+                        if (idName === t) {
+                            found = true
+                            line = `import { ${idName} } from ${source}\n`
+                            break
+                        }
+                    }
                 }
+                if (!found) throw `type reference '${t}' need to be exported in source file ${filePath}`
+            } else {
+                line = `import { ${t} } from './${sardineFileName}'\n`
+            }
+            if (line && !params.only_validate) {
+                if (params.print) {
+                    console.log(line)
+                }
+                fs.appendFileSync(intermediateFilePath, line)
             }
         }
 
