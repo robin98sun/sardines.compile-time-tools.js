@@ -26,9 +26,48 @@ for (let i = 2; i < proc.argv.length; i++) {
 }
 
 const projectName = params['project'] ? params['project'] : ''
+
 if (params['verbose']) {
     console.log(`processing files belong to project: ${projectName}`)
+} else {
+    params.verbose = false
 }
+
+if (params['print']) {
+    params.print = true
+} else {
+    params.print = false
+}
+
+if (params['only-validate']) {
+    console.log(`only to validate the files`)
+    params.only_validate = true    
+} else {
+    params.only_validate = false
+}
+
+if (params['validate']) {
+    console.log(`validate the files and halt whenever encounter an error`)
+    params.validate = true    
+} else {
+    params.validate = false
+}
+
+if (params['recompile']) {
+    console.log(`recompiling`)
+    params.recompile = true
+} else {
+    params.recompile = false
+}
+
+if (params['reverse']) {
+    console.log(`redo previous compiled files`)
+    params.reverse = true
+} else {
+    params.reverse = false
+}
+
+
 
 // Compiler 
 // Reference: https://github.com/Microsoft/TypeScript/wiki/Using-the-Compiler-API
@@ -104,12 +143,14 @@ export function gatherExports(sourceFile: ts.SourceFile): Map<string, Identifier
             case ts.SyntaxKind.ArrowFunction:
                 syntax.name = (node as ts.ArrowFunction).name
                 syntax.isAsync = checkSyntaxType(node, ts.SyntaxKind.AsyncKeyword)
-                syntax.isExport = checkSyntaxType(node, ts.SyntaxKind.AsyncKeyword)
+                // syntax.isExport = checkSyntaxType(node, ts.SyntaxKind.AsyncKeyword)
+                syntax.isExport = checkSyntaxType(node, ts.SyntaxKind.ExportKeyword)
                 break
             case ts.SyntaxKind.FunctionDeclaration:
                 syntax.name = (node as ts.FunctionDeclaration).name!.text
                 syntax.isAsync = checkSyntaxType(node, ts.SyntaxKind.AsyncKeyword)
-                syntax.isExport = checkSyntaxType(node, ts.SyntaxKind.AsyncKeyword)
+                // syntax.isExport = checkSyntaxType(node, ts.SyntaxKind.AsyncKeyword)
+                syntax.isExport = checkSyntaxType(node, ts.SyntaxKind.ExportKeyword)
                 break
             case ts.SyntaxKind.VariableDeclaration:
                 isExport = checkSyntaxType(node.parent.parent) // check the VariableStatement
@@ -178,11 +219,21 @@ const processFile = (filePath: string) => {
     const extName = path.extname(baseName)
 
     if (extName.toLowerCase() !== '.ts') {
-        throw `unsupported file type: ${extName}`
+        const msg = `unsupported file type '${extName}' for file ${filePath}`
+        if (params.verbose) {
+            console.log(msg)
+        }
+        if (params.only_validate || params.validate) {
+            throw msg
+        }
     }
 
     // check if the file is source file
-    let fileName = '', sardineBaseName = '', sardineFilePath = ''
+    let fileName = '',              // the pure file base name WITHOUT any extname nor the prefix dir path
+        sardineFileName = '',       // ${fileName}.sardine
+        sardineBaseName = '',       // ${sardineFileName}.ts
+        sardineFilePath = '',       // file path like ${dir}/${sardineFileName}.ts
+        intermediateFilePath = ''   // ${dir}/${sardineFileName}.tmp
     if (baseName.indexOf(sardineExtName) < 0) {
         fileName = path.basename(baseName, extName)
         sardineBaseName = `${fileName}${sardineExtName}`
@@ -193,25 +244,21 @@ const processFile = (filePath: string) => {
         fileName = path.basename(baseName, sardineExtName)
         filePath = `${dir}/${fileName}${extName}`
     }
-    const sardineFileName = path.basename(sardineBaseName, extName)
+    sardineFileName = path.basename(sardineBaseName, extName)
+    intermediateFilePath = `${dir}/${sardineFileName}.tmp`
 
     // make sure no duplicated processing
-    if (fs.existsSync(sardineFilePath) && processedFiles[sardineFilePath]) return
-    if (fs.existsSync(filePath) && processedFiles[filePath]) return
-
-    let sourceFilePath = sardineFilePath
-    if (params['no-moving']) {
-        sourceFilePath = filePath
-    } else if (!fs.existsSync(sardineFilePath)) {
-        fs.renameSync(filePath, sardineFilePath)
-        if (params['verbose']) {
-            console.log(`moving ${filePath} to ${sardineFilePath}`)
-        }
+    if (!params.recompile && !params.reverse) {
+        if (fs.existsSync(sardineFilePath)) return
+    } else if (fs.existsSync(sardineFilePath)) {
+        fs.renameSync(sardineFilePath, filePath)
     }
 
-    if (fs.existsSync(sourceFilePath) && processedFiles[sourceFilePath]) return
+    if (params.reverse) return
 
-    if (params['verbose']) {
+    let sourceFilePath = filePath
+
+    if (params.verbose) {
         console.log(`processing file: ${sourceFilePath}`)
     }
     // compile it
@@ -228,10 +275,10 @@ const processFile = (filePath: string) => {
 
         // generate compiled file to replace original file
         let line = `import * as origin from './${sardineFileName}'\n`
-        if (!params['no-moving']) {
-            fs.writeFileSync(filePath, line)
+        if (!params.only_validate) {
+            fs.writeFileSync(intermediateFilePath, line)
         }
-        if (params['verbose']) {
+        if (params.print) {
             console.log(line)
         }
 
@@ -240,35 +287,51 @@ const processFile = (filePath: string) => {
         while (!key.done) {
             const item: IdentifierSyntax = identifiers.get(key.value)!
             if (item.type === ts.SyntaxKind.InterfaceDeclaration) {
-                line = `export ${item.text}`
+                line = `export { ${item.name} } from './${sardineFileName}'\n`
             } else {
-                line = `export const ${item.name} = async (...params) => {\n` + 
+                line = `export const ${item.name} = async (...params: any[]) => {\n` + 
                 // TODO: generate service name
                 // register service on the root node
                 // check whether the service should run locally or remotely
 
                 // run service locally
                 `   return ${item.isAsync? 'await' : ''} origin.${item.name}(...params)\n` +
-                `}`
+                `}\n`
             }
-            if (!params['no-moving']) {
-                fs.appendFileSync(filePath, line)
+            if (!params.only_validate) {
+                fs.appendFileSync(intermediateFilePath, line)
             }
-            if (params['verbose']) {
+            if (params.print) {
                 console.log(line)
             }
             key = iterator.next()
         }
-        if (params['verbose']) {
+        if (!params.only_validate && fs.existsSync(intermediateFilePath)) {
+            if (params.verbose) {
+                console.log(`renaming source file ${filePath} to sardine file ${sardineFilePath}`)
+            }
+            fs.renameSync(filePath, sardineFilePath)
+            if (params.verbose) {
+                console.log(`moving intermediate file ${intermediateFilePath} to replace source file ${filePath}`)
+            }
+            fs.renameSync(intermediateFilePath, filePath)
+        }
+        if (params.verbose || params.only_validate) {
             console.log(`successfully processed source file: ${sourceFilePath}\n`)
         }
     } catch (err) {
-        if (params['verbose']) {
+        if (params.verbose)  {
             console.error(`ERROR while processing ${filePath}:\n`, err, '\n')
+        }
+        if (params.validate || params.only_validate) {
+            throw err
         }
     } finally {
         processedFiles[filePath] = true
         processedFiles[sardineFilePath] = true
+        if (fs.existsSync(intermediateFilePath)) {
+            fs.unlinkSync(intermediateFilePath)
+        }
     }
 }
 
