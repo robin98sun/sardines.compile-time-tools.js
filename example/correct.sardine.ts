@@ -7,6 +7,8 @@ import {
 } from '../builtin_services/storage'
 import * as utils from 'sardines-utils'
 
+export { Storage, StorageSettings as XYZSettings } from '../builtin_services/storage'
+
 const postgresDBStruct: PostgresDatabaseStructure = {
     service: {
         id: 'UUID PRIMARY KEY DEFAULT uuid_generate_v4()',

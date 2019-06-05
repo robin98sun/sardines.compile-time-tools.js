@@ -1,6 +1,8 @@
 import * as origin from './correct.sardine'
 import { RepositorySettings } from './correct.sardine'
 import { StorageSettings as TEstStSt } from '../builtin_services/storage'
+export { Storage } from '../builtin_services/storage'
+export { StorageSettings as XYZSettings } from '../builtin_services/storage'
 export { ServiceSettings } from './correct.sardine'
 export { ServiceIdentity } from './correct.sardine'
 export { RepositorySettings } from './correct.sardine'
