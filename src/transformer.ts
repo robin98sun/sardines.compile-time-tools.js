@@ -1,11 +1,11 @@
 import * as ts from 'typescript'
 import { IdentifierSyntax } from './parser'
 
-export const transform = (sardineFileName:string, sourceFilePath: string, identifiers: Map<string, IdentifierSyntax>, referencedTypes: string[], importedIds: string[], proxyIds: string[], line_handler: any) => {
+export const transform = async (sardineFileName:string, sourceFilePath: string, identifiers: Map<string, IdentifierSyntax>, referencedTypes: string[], importedIds: string[], proxyIds: string[], line_handler: any) => {
     // generate compiled file to replace original file
     let line_index = 0
     let line = `import * as origin from './${sardineFileName}'\n`
-    line_handler(line, line_index)
+    await line_handler(line, line_index)
 
     // import types referenced by source code
     for (let t of referencedTypes) {
@@ -40,7 +40,7 @@ export const transform = (sardineFileName:string, sourceFilePath: string, identi
         }
         if (line) {
             line_index++
-            line_handler(line, line_index)
+            await line_handler(line, line_index)
         }
     }
 
@@ -54,7 +54,7 @@ export const transform = (sardineFileName:string, sourceFilePath: string, identi
         }
         let line = `export { ${idName}${alias?' as '+alias:''} } from ${source}\n`
         line_index++
-        line_handler(line, line_index)
+        await line_handler(line, line_index)
     }
 
     const iterator = identifiers.keys()
@@ -74,7 +74,7 @@ export const transform = (sardineFileName:string, sourceFilePath: string, identi
             `}\n`
         }
         line_index++
-        line_handler(line, line_index)
+        await line_handler(line, line_index)
         key = iterator.next()
     }
 }

@@ -80,14 +80,15 @@ import { transform } from './transformer'
 const processedFiles: {[key: string]: boolean} = {}
 const sardineExtName = `.sardine.ts`
 
-const processFile = (filePath: string) => {
+const processFile = async (targetFilePath: string) => {
+    let filePath = targetFilePath
     if (processedFiles[filePath]) return
 
     // recursively process directory
     if (fs.lstatSync(filePath).isDirectory()) {
-        fs.readdirSync(filePath).forEach(item => {
+        fs.readdirSync(filePath).forEach(async item => {
             const subFilePath = path.join(filePath, `./${item}`)
-            processFile(subFilePath)
+            await processFile(subFilePath)
         })
         processedFiles[filePath] = true
         return
@@ -134,12 +135,21 @@ const processFile = (filePath: string) => {
     if (!params.recompile && !params.reverse) {
         if (fs.existsSync(sardineFilePath)) return
     } else if (fs.existsSync(sardineFilePath)) {
+        if (params.verbose) {
+            console.log(`restoring source file ${filePath} from sardine file ${sardineFilePath}`)
+        }
         fs.renameSync(sardineFilePath, filePath)
     }
 
     if (params.reverse) return
+    
+    if (targetFilePath === sardineFilePath) return
 
     let sourceFilePath = filePath
+
+    if (processedFiles[filePath]) return
+    processedFiles[filePath] = true
+
 
     if (params.verbose) {
         console.log(`processing file: ${sourceFilePath}`)
@@ -150,7 +160,7 @@ const processFile = (filePath: string) => {
         // Parse a file
         const [identifiers, referencedTypes, importedIds, proxyIds] = gatherExports(sourceFilePath);
 
-        transform(sardineFileName, sourceFilePath, identifiers, referencedTypes, importedIds, proxyIds, (line:string, lineIndex:number) => {
+        await transform(sardineFileName, sourceFilePath, identifiers, referencedTypes, importedIds, proxyIds, (line:string, lineIndex:number) => {
             if (lineIndex === 0) {
                 if (!params.only_validate) {
                     fs.writeFileSync(intermediateFilePath, line)
@@ -187,14 +197,12 @@ const processFile = (filePath: string) => {
             throw err
         }
     } finally {
-        processedFiles[filePath] = true
-        processedFiles[sardineFilePath] = true
         if (fs.existsSync(intermediateFilePath)) {
             fs.unlinkSync(intermediateFilePath)
         }
     }
 }
 
-files.forEach(filePath => {
-    processFile(filePath)
+files.forEach(async filePath => {
+    await processFile(filePath)
 });
