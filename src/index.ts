@@ -242,7 +242,7 @@ if (params.gen_services) {
             }
         } catch(e) {
             if (params.verbose) {
-                console.log(`error when loading service definition file at [${params.gen_services}]: ${e}`)
+                console.error(`error when loading service definition file at [${params.gen_services}]: ${e}`)
             }
         }
     } else {
@@ -251,39 +251,30 @@ if (params.gen_services) {
     }
 }
 
-Promise.all(files.map(filePath => new Promise(async (resolve, reject) => {
-    try {
-        let services = await processFile(filePath)
-        resolve(services)
-    } catch(e) {
-        reject(e)
-    }
-}))).then(results => {
-    if (!params.only_validate && params.gen_services && Array.isArray(service_definition_file_content.services) && sardineServices) {
-        let hasError = false
-        for (let {services, error, filePath} of <JobResult[]>results) {
-            if (error) {
-                hasError = true
-                if (params.verbose || params.only_validate || params.validate)  {
-                    console.error(`ERROR while processing ${filePath}:\n`, error)
-                }
-            } else {
-                for (let s of services) {
-                    const name = getServiceName(s)
-                    sardineServices.set(name, s)
-                }
+Promise.all(files.map(filePath => processFile(filePath))).then(results => {
+    let hasError = false
+    for (let {services, error, filePath} of <JobResult[]>results) {
+        if (error) {
+            hasError = true
+            if (params.verbose || params.only_validate || params.validate)  {
+                console.error(`ERROR while processing ${filePath}:\n`, error)
+            }
+        } else if(sardineServices) {
+            for (let s of services) {
+                const name = getServiceName(s)
+                sardineServices.set(name, s)
             }
         }
-        if (!hasError) {
-            service_definition_file_content.services = Array.from(sardineServices.values())
-            try {
-                fs.writeFileSync(params.gen_services, JSON.stringify(service_definition_file_content, null, 4))
-                if (params.verbose) {
-                    console.log(`${service_definition_file_content.services.length} services stored in the sardine definition file at [${params.gen_services}]`)
-                }
-            } catch (e) {
-                console.error(`ERROR when writing sardine service definition file at [${params.gen_services}]`, e)
+    }
+    if (!hasError && !params.only_validate && params.gen_services && Array.isArray(service_definition_file_content.services) && sardineServices) {
+        service_definition_file_content.services = Array.from(sardineServices.values())
+        try {
+            fs.writeFileSync(params.gen_services, JSON.stringify(service_definition_file_content, null, 4))
+            if (params.verbose) {
+                console.log(`${service_definition_file_content.services.length} services stored in the sardine definition file at [${params.gen_services}]`)
             }
+        } catch (e) {
+            console.error(`ERROR when writing sardine service definition file at [${params.gen_services}]`, e)
         }
     }
 }).catch(e => {
