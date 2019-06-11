@@ -1,11 +1,11 @@
-import * as origin from './correct.sardine'
-import { RepositorySettings } from './correct.sardine'
+import * as origin from './index.sardine'
+import { RepositorySettings } from './index.sardine'
 import { StorageSettings as TEstStSt } from '../builtin_services/storage'
 export { Storage } from '../builtin_services/storage'
 export { StorageSettings as XYZSettings } from '../builtin_services/storage'
-export { ServiceSettings } from './correct.sardine'
-export { ServiceIdentity } from './correct.sardine'
-export { RepositorySettings } from './correct.sardine'
+export { ServiceSettings } from './index.sardine'
+export { ServiceIdentity } from './index.sardine'
+export { RepositorySettings } from './index.sardine'
 export const someFunc = async (settings: RepositorySettings, others: any[] = []) => {
    return await origin.someFunc(settings, others)
 }

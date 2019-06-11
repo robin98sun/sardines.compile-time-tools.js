@@ -1,6 +1,8 @@
 import * as ts from "typescript"
 import * as fs from 'fs'
 
+const builtInTypes = ['Promise', 'Map', 'Array', 'Set', 'void', 'any', 'null', 'undefined', 'object', 'number', 'string', 'boolean']
+
 export interface IdentifierSyntax { 
     name: string
     type: ts.SyntaxKind
@@ -10,6 +12,7 @@ export interface IdentifierSyntax {
     text: string
     param?: IdentifierSyntax[]|null
     typeRef?: string[]
+    returnType?: string
 }
 
 export function gatherExports(sourceFilePath: string): [Map<string, IdentifierSyntax>, string[], string[], string[]] {
@@ -64,19 +67,25 @@ export function gatherExports(sourceFilePath: string): [Map<string, IdentifierSy
         return result
     }
 
-    const printSyntax = (node: ts.Node, prefix: string = '') => {
+    const printNode = (node: ts.Node, prefix: string = '') => {
         console.log(prefix, ts.SyntaxKind[node.kind], node.getText())
         for (let item of node.getChildren()){
-            printSyntax(item, prefix + '    ')
+            printNode(item, prefix + '    ')
         }
     }
 
     const getTypeRefInParam = (param: ts.Node): string[] => {
         const result = []
         for (let item of param.getChildren()) {
+            let digIn = true 
             if (item.kind === ts.SyntaxKind.TypeReference) {
-                result.push(item.getText())
-            } else {
+                let text = item.getText()
+                if (text.indexOf('<') < 0 && builtInTypes.indexOf(text) < 0 && text.indexOf('|') < 0) {
+                    result.push(text)
+                    digIn = false
+                } 
+            } 
+            if (digIn) {
                 const subResult = getTypeRefInParam(item)
                 for (let t of subResult) {
                     if (result.indexOf(t) < 0) {
@@ -128,12 +137,34 @@ export function gatherExports(sourceFilePath: string): [Map<string, IdentifierSy
         return null
     }
 
+    const getReturnType = (node: ts.Node) => {
+        let preBeforePre = null, pre = null, returnType = null
+        for (let child of node.getChildren()) {
+            if (pre && preBeforePre && preBeforePre.kind === ts.SyntaxKind.ColonToken) 
+                if (child.kind === ts.SyntaxKind.EqualsGreaterThanToken || child.kind === ts.SyntaxKind.Block) {
+                    returnType = pre.getText()
+                }
+            preBeforePre = pre
+            pre = child
+        }
+        return returnType
+    }
+
     const parseParamsIntoSyntax = (node: ts.Node, syntax: IdentifierSyntax) => {
         syntax.param = getParamSyntax(node)
         if (syntax.param) {
             syntax.typeRef = getTypeRefInParam(node)
             if (syntax.typeRef!.length > 0) storeReferencedTypes(syntax.typeRef!)
         }
+        syntax.isAsync = checkSyntaxType(node, ts.SyntaxKind.AsyncKeyword)
+        let returnType = getReturnType(node)
+        if (!returnType) returnType = 'any'
+        else if (syntax.isAsync && returnType.indexOf('Promise<') === 0) {
+            returnType = returnType.substr(8)
+            returnType = returnType.substr(0, returnType.length - 1)
+        }
+        syntax.returnType = returnType
+        return syntax
     }
 
     const getNamedImportsOrExports = (node: ts.Node): [string[], string|null] => {
@@ -196,13 +227,11 @@ export function gatherExports(sourceFilePath: string): [Map<string, IdentifierSy
                 break
             case ts.SyntaxKind.ArrowFunction:
                 syntax.name = (node as ts.ArrowFunction).name
-                syntax.isAsync = checkSyntaxType(node, ts.SyntaxKind.AsyncKeyword)
                 syntax.isExport = checkSyntaxType(node, ts.SyntaxKind.ExportKeyword)
                 parseParamsIntoSyntax(node, syntax)
                 break
             case ts.SyntaxKind.FunctionDeclaration:  case ts.SyntaxKind.FunctionExpression:
                 syntax.name = (node as ts.FunctionDeclaration).name!.text
-                syntax.isAsync = checkSyntaxType(node, ts.SyntaxKind.AsyncKeyword)
                 syntax.isExport = checkSyntaxType(node, ts.SyntaxKind.ExportKeyword)
                 parseParamsIntoSyntax(node, syntax)
                 break
@@ -219,8 +248,7 @@ export function gatherExports(sourceFilePath: string): [Map<string, IdentifierSy
                             tmpSyntax!.isExport = isExport
                             storeSyntax(tmpSyntax)
                         } else if (item.kind !== ts.SyntaxKind.Identifier) {
-                            isAsync = checkSyntaxType(item, ts.SyntaxKind.AsyncKeyword)
-                            const itemSyntax: IdentifierSyntax = { name, isAsync, isExport, type: item.kind, typeStr: ts.SyntaxKind[item.kind], text: sourceId}
+                            const itemSyntax: IdentifierSyntax = { name, isAsync: false, isExport, type: item.kind, typeStr: ts.SyntaxKind[item.kind], text: sourceId}
                             if (item.kind === ts.SyntaxKind.FunctionExpression || item.kind === ts.SyntaxKind.ArrowFunction) {
                                 parseParamsIntoSyntax(item, itemSyntax)
                             }

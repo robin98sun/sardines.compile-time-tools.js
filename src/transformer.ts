@@ -1,12 +1,15 @@
 import * as ts from 'typescript'
 import { IdentifierSyntax } from './parser'
+import { genProxyCode, genService, Service } from './serviceGenerator'
+export { Service, getServiceName } from './serviceGenerator'
 
-export const transform = async (sardineFileName:string, sourceFilePath: string, identifiers: Map<string, IdentifierSyntax>, referencedTypes: string[], importedIds: string[], proxyIds: string[], line_handler: any) => {
+export const transform = async (fileName: string, sardineFileName:string, sourceFilePath: string, identifiers: Map<string, IdentifierSyntax>, referencedTypes: string[], importedIds: string[], proxyIds: string[], line_handler: any) => {
     // generate compiled file to replace original file
     let line_index = 0
     let line = `import * as origin from './${sardineFileName}'\n`
     await line_handler(line, line_index)
 
+    const sardineServices: Service[] = []
     // import types referenced by source code
     for (let t of referencedTypes) {
         let line = null
@@ -64,17 +67,14 @@ export const transform = async (sardineFileName:string, sourceFilePath: string, 
         if (item.type === ts.SyntaxKind.InterfaceDeclaration) {
             line = `export { ${item.name} } from './${sardineFileName}'\n`
         } else {
-            line = `export const ${item.name} = async (${item.param?item.param.map(x => x.text).join(', '):''}) => {\n` + 
-            // TODO: generate service name
-            // register service on the root node
-            // check whether the service should run locally or remotely
-
-            // run service locally
-            `   return ${item.isAsync? 'await' : ''} origin.${item.name}(${item.param?item.param.map(x => x.name).join(', '):''})\n` +
-            `}\n`
+            // This is a service
+            line = genProxyCode(item)
+            const serviceInfo = genService(item, fileName, sourceFilePath)
+            sardineServices.push(serviceInfo)
         }
         line_index++
         await line_handler(line, line_index)
         key = iterator.next()
     }
+    return sardineServices
 }

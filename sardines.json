@@ -1,0 +1,134 @@
+{
+    "services": [
+        {
+            "name": "someFunc",
+            "module": "/example",
+            "arguments": [
+                {
+                    "name": "settings",
+                    "type": "RepositorySettings"
+                },
+                {
+                    "name": "others",
+                    "type": "any[]",
+                    "default": "[]"
+                }
+            ],
+            "returnType": "any",
+            "isAsync": true
+        },
+        {
+            "name": "someArrowFunc",
+            "module": "/example",
+            "arguments": [
+                {
+                    "name": "settings",
+                    "type": "RepositorySettings[]|RepositorySettings|null"
+                }
+            ],
+            "returnType": "RepositorySettings",
+            "isAsync": true
+        },
+        {
+            "name": "t",
+            "module": "/example",
+            "arguments": [
+                {
+                    "name": "s",
+                    "type": "TEstStSt"
+                }
+            ],
+            "returnType": "any",
+            "isAsync": true
+        },
+        {
+            "name": "x",
+            "module": "/example",
+            "arguments": [
+                {
+                    "name": "settings",
+                    "type": "RepositorySettings"
+                }
+            ],
+            "returnType": "RepositorySettings",
+            "isAsync": false
+        },
+        {
+            "name": "z",
+            "module": "/example",
+            "arguments": [
+                {
+                    "name": "settings",
+                    "type": "RepositorySettings[]|RepositorySettings|null"
+                }
+            ],
+            "returnType": "RepositorySettings",
+            "isAsync": true
+        },
+        {
+            "name": "someFunc",
+            "module": "/example/correct",
+            "arguments": [
+                {
+                    "name": "settings",
+                    "type": "RepositorySettings"
+                },
+                {
+                    "name": "others",
+                    "type": "any[]",
+                    "default": "[]"
+                }
+            ],
+            "returnType": "any",
+            "isAsync": true
+        },
+        {
+            "name": "someArrowFunc",
+            "module": "/example/correct",
+            "arguments": [
+                {
+                    "name": "settings",
+                    "type": "RepositorySettings[]|RepositorySettings|null"
+                }
+            ],
+            "returnType": "RepositorySettings",
+            "isAsync": true
+        },
+        {
+            "name": "t",
+            "module": "/example/correct",
+            "arguments": [
+                {
+                    "name": "s",
+                    "type": "TEstStSt"
+                }
+            ],
+            "returnType": "any",
+            "isAsync": true
+        },
+        {
+            "name": "x",
+            "module": "/example/correct",
+            "arguments": [
+                {
+                    "name": "settings",
+                    "type": "RepositorySettings"
+                }
+            ],
+            "returnType": "RepositorySettings",
+            "isAsync": false
+        },
+        {
+            "name": "z",
+            "module": "/example/correct",
+            "arguments": [
+                {
+                    "name": "settings",
+                    "type": "RepositorySettings[]|RepositorySettings|null"
+                }
+            ],
+            "returnType": "RepositorySettings",
+            "isAsync": true
+        }
+    ]
+}

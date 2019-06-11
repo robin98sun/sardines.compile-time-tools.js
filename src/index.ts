@@ -67,6 +67,16 @@ if (params['reverse']) {
     params.reverse = false
 }
 
+if (params['gen-services']) {
+    let paramValue = params['gen-services']
+    if (typeof paramValue === 'string'){
+        if(params.verbose) console.log(`going to generate service definition file at [${paramValue}]`)
+    } else {
+        paramValue = `${proc.cwd()}/sardines.json`
+        if(params.verbose) console.log(`going to generate service definition file at [${paramValue}]`)
+    }
+    params.gen_services = paramValue
+}
 
 
 // Compiler 
@@ -75,27 +85,43 @@ import * as fs from "fs"
 import * as path from 'path'
 
 import { gatherExports } from './parser'
-import { transform } from './transformer'
+import { transform, Service, getServiceName } from './transformer'
 
 const processedFiles: {[key: string]: boolean} = {}
 const sardineExtName = `.sardine.ts`
 
-const processFile = async (targetFilePath: string) => {
+interface JobResult {
+    services: Service[]
+    error: any|null
+    filePath: string
+}
+
+const processFile = async (targetFilePath: string): Promise<JobResult> => {
+    let services: Service[] = []
     let filePath = targetFilePath
-    if (processedFiles[filePath]) return
+    let error = null
+
+    if (processedFiles[filePath]) return {services,error,filePath}
 
     // recursively process directory
     if (fs.lstatSync(filePath).isDirectory()) {
-        fs.readdirSync(filePath).forEach(async item => {
+        for(let item of fs.readdirSync(filePath)) {
             const subFilePath = path.join(filePath, `./${item}`)
-            await processFile(subFilePath)
-        })
+            let subjobResult = await processFile(subFilePath)
+            if (subjobResult.error) {
+                error = subjobResult.error
+                filePath = subjobResult.filePath
+                break
+            } else {
+                Array.prototype.push.apply(services, subjobResult.services)
+            }
+        }
         processedFiles[filePath] = true
-        return
+        return {services,error,filePath}
     }
 
     // only process files, excluding socket/fifo/device files
-    if (!fs.lstatSync(filePath).isFile()) return
+    if (!fs.lstatSync(filePath).isFile()) return {services,error,filePath}
 
     // Prepare the file names
     const dir = path.dirname(filePath)
@@ -103,13 +129,8 @@ const processFile = async (targetFilePath: string) => {
     const extName = path.extname(baseName)
 
     if (extName.toLowerCase() !== '.ts') {
-        const msg = `unsupported file type '${extName}' for file ${filePath}`
-        if (params.verbose) {
-            console.log(msg)
-        }
-        if (params.only_validate || params.validate) {
-            throw msg
-        }
+        error = `unsupported file type '${extName}' for file ${filePath}`
+        return {services,error,filePath}
     }
 
     // check if the file is source file
@@ -133,7 +154,7 @@ const processFile = async (targetFilePath: string) => {
 
     // make sure no duplicated processing
     if (!params.recompile && !params.reverse) {
-        if (fs.existsSync(sardineFilePath)) return
+        if (fs.existsSync(sardineFilePath)) return {services,error,filePath}
     } else if (fs.existsSync(sardineFilePath)) {
         if (params.verbose) {
             console.log(`restoring source file ${filePath} from sardine file ${sardineFilePath}`)
@@ -141,26 +162,26 @@ const processFile = async (targetFilePath: string) => {
         fs.renameSync(sardineFilePath, filePath)
     }
 
-    if (params.reverse) return
+    if (params.reverse) return {services,error,filePath}
     
-    if (targetFilePath === sardineFilePath) return
+    if (targetFilePath === sardineFilePath) return {services,error,filePath}
 
     let sourceFilePath = filePath
 
-    if (processedFiles[filePath]) return
+    if (processedFiles[filePath]) return {services,error,filePath}
     processedFiles[filePath] = true
 
-
     if (params.verbose) {
-        console.log(`processing file: ${sourceFilePath}`)
+        console.log(`\nprocessing file: ${sourceFilePath}`)
     }
+    
     // compile it
     try {
         // process the source file
         // Parse a file
         const [identifiers, referencedTypes, importedIds, proxyIds] = gatherExports(sourceFilePath);
 
-        await transform(sardineFileName, sourceFilePath, identifiers, referencedTypes, importedIds, proxyIds, (line:string, lineIndex:number) => {
+        services = await transform(fileName, sardineFileName, sourceFilePath, identifiers, referencedTypes, importedIds, proxyIds, (line:string, lineIndex:number) => {
             if (lineIndex === 0) {
                 if (!params.only_validate) {
                     fs.writeFileSync(intermediateFilePath, line)
@@ -175,7 +196,8 @@ const processFile = async (targetFilePath: string) => {
                 fs.appendFileSync(intermediateFilePath, line)
             }
         })
-        
+
+        // 
         if (!params.only_validate && fs.existsSync(intermediateFilePath)) {
             if (params.verbose) {
                 console.log(`renaming source file ${filePath} to sardine file ${sardineFilePath}`)
@@ -187,22 +209,83 @@ const processFile = async (targetFilePath: string) => {
             fs.renameSync(intermediateFilePath, filePath)
         }
         if (params.verbose || params.only_validate) {
-            console.log(`successfully processed source file: ${sourceFilePath}\n`)
+            console.log(`successfully processed source file: ${sourceFilePath}`)
         }
+        return {services,error,filePath}
     } catch (err) {
-        if (params.verbose)  {
-            console.error(`ERROR while processing ${filePath}:\n`, err, '\n')
-        }
-        if (params.validate || params.only_validate) {
-            throw err
-        }
+        error = err
     } finally {
         if (fs.existsSync(intermediateFilePath)) {
             fs.unlinkSync(intermediateFilePath)
         }
+        return {services,error,filePath}
     }
 }
 
-files.forEach(async filePath => {
-    await processFile(filePath)
-});
+
+// Prepare service definition file
+let service_definition_file_content: any = {}
+let sardineServices: Map<string, Service>|null = null
+if (params.gen_services) {
+    if (fs.existsSync(params.gen_services)) {
+        try {
+            service_definition_file_content = JSON.parse(fs.readFileSync(params.gen_services).toString())
+            if (service_definition_file_content.services) {
+                sardineServices = new Map()
+                for (let s of service_definition_file_content.services) {
+                    const name = getServiceName(s)
+                    if (!sardineServices.has(name)) {
+                        sardineServices.set(name, s)
+                    }
+                }
+                service_definition_file_content.services = []
+            }
+        } catch(e) {
+            if (params.verbose) {
+                console.log(`error when loading service definition file at [${params.gen_services}]: ${e}`)
+            }
+        }
+    } else {
+        sardineServices = new Map()
+        service_definition_file_content.services = []
+    }
+}
+
+Promise.all(files.map(filePath => new Promise(async (resolve, reject) => {
+    try {
+        let services = await processFile(filePath)
+        resolve(services)
+    } catch(e) {
+        reject(e)
+    }
+}))).then(results => {
+    if (!params.only_validate && params.gen_services && Array.isArray(service_definition_file_content.services) && sardineServices) {
+        let hasError = false
+        for (let {services, error, filePath} of <JobResult[]>results) {
+            if (error) {
+                hasError = true
+                if (params.verbose || params.only_validate || params.validate)  {
+                    console.error(`ERROR while processing ${filePath}:\n`, error)
+                }
+            } else {
+                for (let s of services) {
+                    const name = getServiceName(s)
+                    sardineServices.set(name, s)
+                }
+            }
+        }
+        if (!hasError) {
+            service_definition_file_content.services = Array.from(sardineServices.values())
+            try {
+                fs.writeFileSync(params.gen_services, JSON.stringify(service_definition_file_content, null, 4))
+                if (params.verbose) {
+                    console.log(`${service_definition_file_content.services.length} services stored in the sardine definition file at [${params.gen_services}]`)
+                }
+            } catch (e) {
+                console.error(`ERROR when writing sardine service definition file at [${params.gen_services}]`, e)
+            }
+        }
+    }
+}).catch(e => {
+    console.error('UNKNOW ERROR:', e)
+})
