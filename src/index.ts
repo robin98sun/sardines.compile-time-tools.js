@@ -109,9 +109,14 @@ const processFile = async (targetFilePath: string): Promise<JobResult> => {
             const subFilePath = path.join(filePath, `./${item}`)
             let subjobResult = await processFile(subFilePath)
             if (subjobResult.error) {
-                error = subjobResult.error
-                filePath = subjobResult.filePath
-                break
+                if (params.validate || params.only_validate) {
+                    error = subjobResult.error
+                    filePath = subjobResult.filePath
+                    break
+                }
+                if (params.verbose) {
+                    console.error(`ERROR for file ${subjobResult.filePath}:`, subjobResult.error, '\n')
+                }
             } else {
                 Array.prototype.push.apply(services, subjobResult.services)
             }
@@ -153,6 +158,7 @@ const processFile = async (targetFilePath: string): Promise<JobResult> => {
     intermediateFilePath = `${dir}/${sardineFileName}.tmp`
 
     // make sure no duplicated processing
+
     if (!params.recompile && !params.reverse) {
         if (fs.existsSync(sardineFilePath)) return {services,error,filePath}
     } else if (fs.existsSync(sardineFilePath)) {
@@ -172,7 +178,7 @@ const processFile = async (targetFilePath: string): Promise<JobResult> => {
     processedFiles[filePath] = true
 
     if (params.verbose) {
-        console.log(`\nprocessing file: ${sourceFilePath}`)
+        console.log(`processing file: ${sourceFilePath}`)
     }
     
     // compile it
@@ -209,7 +215,7 @@ const processFile = async (targetFilePath: string): Promise<JobResult> => {
             fs.renameSync(intermediateFilePath, filePath)
         }
         if (params.verbose || params.only_validate) {
-            console.log(`successfully processed source file: ${sourceFilePath}`)
+            console.log(`successfully processed source file: ${sourceFilePath}\n`)
         }
         return {services,error,filePath}
     } catch (err) {
@@ -242,7 +248,7 @@ if (params.gen_services) {
             }
         } catch(e) {
             if (params.verbose) {
-                console.error(`error when loading service definition file at [${params.gen_services}]: ${e}`)
+                console.error(`error when loading service definition file at [${params.gen_services}]:`, e, '\n')
             }
         }
     } else {
@@ -257,7 +263,7 @@ Promise.all(files.map(filePath => processFile(filePath))).then(results => {
         if (error) {
             hasError = true
             if (params.verbose || params.only_validate || params.validate)  {
-                console.error(`ERROR while processing ${filePath}:\n`, error)
+                console.error(`ERROR while processing ${filePath}:`, error, '\n')
             }
         } else if(sardineServices) {
             for (let s of services) {
@@ -274,9 +280,9 @@ Promise.all(files.map(filePath => processFile(filePath))).then(results => {
                 console.log(`${service_definition_file_content.services.length} services stored in the sardine definition file at [${params.gen_services}]`)
             }
         } catch (e) {
-            console.error(`ERROR when writing sardine service definition file at [${params.gen_services}]`, e)
+            console.error(`ERROR when writing sardine service definition file at [${params.gen_services}]`, e, '\n')
         }
     }
 }).catch(e => {
-    console.error('UNKNOW ERROR:', e)
+    console.error('UNKNOW ERROR:', e, '\n')
 })
