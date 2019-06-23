@@ -26,6 +26,7 @@ export interface Service {
     arguments: Argument[]
     returnType: string
     isAsync: boolean
+    filepath?: string
 }
 
 export const getServiceName = (s: Service): string => {
@@ -40,12 +41,18 @@ export const genService = (item: IdentifierSyntax, fileName:string, sourceFilePa
     else if (moduleName.toLowerCase().indexOf('/src/') === 0) {
         moduleName = moduleName.substr(4)
     }
+    let filepath = sourceFilePath
+    if (filepath.indexOf('src') === 0) filepath = filepath.substr(3)
+    else if (filepath.indexOf('/src') === 0) filepath = filepath.substr(4)
+    else if (filepath.indexOf('./src') === 0) filepath = filepath.substr(5)
+    if (filepath === '') filepath = '/'
     let serviceInfo: Service = {
         name: item.name,
         module: moduleName,
         arguments: [],
         returnType: 'any',
-        isAsync: item.isAsync
+        isAsync: item.isAsync,
+        filepath
     }
     if (item.returnType) serviceInfo.returnType = item.returnType
     if (item.param) {

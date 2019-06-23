@@ -26,7 +26,7 @@
         "FaaS"
     ],
     "license": "ISC",
-    "bin": "lib/prod/index.js",
+    "bin": "lib/prod/bin.js",
     "main": "lib/prod/index.js",
     "name": "sardines-compiler",
     "repository": {
@@ -43,8 +43,8 @@
         "clear": "rm -rf lib/*",
         "clearDev": "rm -rf lib/dev",
         "clearProd": "rm -rf lib/prod",
-        "makeExecProd": "file=lib/prod/index.js; { echo '#!/usr/bin/env node'; cat $file; } > ${file}.tmp && mv ${file}.tmp $file && chmod a+x $file",
-        "makeExecDev": "file=lib/dev/index.js; { echo '#!/usr/bin/env node'; cat $file; } > ${file}.tmp && mv ${file}.tmp $file && chomd a+x $file"
+        "makeExecProd": "file=lib/prod/bin.js; { echo '#!/usr/bin/env node'; cat $file; } > ${file}.tmp && mv ${file}.tmp $file && chmod a+x $file",
+        "makeExecDev": "file=lib/dev/bin.js; { echo '#!/usr/bin/env node'; cat $file; } > ${file}.tmp && mv ${file}.tmp $file && chomd a+x $file"
     },
     "version": "0.0.1"
 }
