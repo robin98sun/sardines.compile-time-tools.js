@@ -4,21 +4,25 @@
         "name": "Robin Sun"
     },
     "bugs": {
-        "url": "https://github.com/robin-98/sardines.compiler.js/issues"
+        "url": "https://github.com/robin-98/sardines.compile-time-tools.js/issues"
     },
     "dependencies": {
         "@types/node": "^12.0.2",
+        "@types/node-fetch": "^2.3.7",
+        "@types/npm": "^2.0.30",
+        "node-fetch": "^2.6.0",
+        "npm": "^6.9.0",
         "sardines-utils": "file:../sardines.utils.js",
         "typescript": "^3.4.5"
     },
-    "description": "sardines.compiler.js is part of the sardines.io project",
+    "description": "sardines.compile-time-tools.js is part of the sardines.io project",
     "devDependencies": {
         "mocha": "^6.1.4",
         "ts-loader": "^5.4.3",
         "webpack": "^4.30.0",
         "webpack-cli": "^3.3.1"
     },
-    "homepage": "https://github.com/robin-98/sardines.compiler.js#readme",
+    "homepage": "https://github.com/robin-98/sardines.compile-time-tools.js#readme",
     "keywords": [
         "Free-to-Decompose",
         "distributed",
@@ -26,25 +30,27 @@
         "FaaS"
     ],
     "license": "ISC",
-    "bin": "lib/prod/bin.js",
+    "bin": {
+        "sdc": "lib/prod/compiler/bin.js"
+    },
     "main": "lib/prod/index.js",
-    "name": "sardines-compiler",
+    "name": "sardines-compile-time-tools",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/robin-98/sardines.compiler.js.git"
+        "url": "git+https://github.com/robin-98/sardines.compile-time-tools.js.git"
     },
     "scripts": {
-        "buildProd": "npm run clearProd && tsc --build conf/tsconfig.prod.json && npm run makeExecProd",
+        "buildProd": "npm run clearProd && tsc --build conf/tsconfig.prod.json && npm run makeExecProdCompiler",
         "prod": "npm run buildProd && node lib/prod/index.js",
-        "buildDev": "npm run clearDev && tsc --build conf/tsconfig.dev.json && npm run makeExecDev",
+        "buildDev": "npm run clearDev && tsc --build conf/tsconfig.dev.json && npm run makeExecDevCompiler",
         "dev": "npm run buildDev && node lib/dev/index.js",
         "testSuccess": "npm run prod -- example -recompile -gen-services -verbose",
         "testFail": "npm run prod -- example -recompile -gen-services -verbose -validate",
         "clear": "rm -rf lib/*",
         "clearDev": "rm -rf lib/dev",
         "clearProd": "rm -rf lib/prod",
-        "makeExecProd": "file=lib/prod/bin.js; { echo '#!/usr/bin/env node'; cat $file; } > ${file}.tmp && mv ${file}.tmp $file && chmod a+x $file",
-        "makeExecDev": "file=lib/dev/bin.js; { echo '#!/usr/bin/env node'; cat $file; } > ${file}.tmp && mv ${file}.tmp $file && chomd a+x $file"
+        "makeExecProdCompiler": "file=lib/prod/compiler/bin.js; { echo '#!/usr/bin/env node'; cat $file; } > ${file}.tmp && mv ${file}.tmp $file && chmod a+x $file",
+        "makeExecDevCompiler": "file=lib/dev/compiler/bin.js; { echo '#!/usr/bin/env node'; cat $file; } > ${file}.tmp && mv ${file}.tmp $file && chomd a+x $file"
     },
     "version": "0.0.1"
 }
