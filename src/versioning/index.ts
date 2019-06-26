@@ -46,7 +46,7 @@ const exec = async (cmd: string, log: boolean = false): Promise<ExecResult> => {
         const cmdParts = cmd.split(' ')
         const programName = cmdParts.shift()
 
-        console.log(`program name: ${programName}, args:`, cmdParts)
+        console.log(`program name: ${programName}, args:`, concatStrings(cmdParts))
         const p = spawn(programName!, concatStrings(cmdParts))
         let stdout = '', stderr = ''
         p.stdout.on('data', (data) => {
