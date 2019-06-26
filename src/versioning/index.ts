@@ -157,11 +157,11 @@ export const gitProcess = async (params:GitProcessParams = {}): Promise<string> 
 
     // get versions
     console.log('input tag:', tag)
-    res = await unifiedExec(`git tag -l "sardines-version:*"`, 'sardines', 'versioning')
+    res = await unifiedExec(`git tag -l "sardines-v*"`, 'sardines', 'versioning')
     let latestVersion = '', currentVersion = ''
     for (let line of res.stdout.split('\n')) {
         if (!line) continue
-        const parts = line.split(':')
+        const parts = line.split('-v')
         if (parts.length >=2) {
             latestVersion = parts[1]
         }
@@ -177,7 +177,7 @@ export const gitProcess = async (params:GitProcessParams = {}): Promise<string> 
         const commitMsg = `${commit?commit:'sardines publisher automatic commit'}`
         await unifiedExec(`git add .`,'sardines', 'versioning')
         await unifiedExec(`git commit -m "${commitMsg}"`,'sardines', 'versioning')
-        await unifiedExec(`git tag -a sardines-version:${currentVersion} -m "${commitMsg}"`, 'sardines', 'versioning')
+        await unifiedExec(`git tag -a sardines-v${currentVersion} -m "${commitMsg}"`, 'sardines', 'versioning')
     }
 
     // checkout sardines branch
