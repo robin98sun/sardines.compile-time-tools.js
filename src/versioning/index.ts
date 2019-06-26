@@ -33,7 +33,7 @@ const concatStrings = (cmdParts: string[]): string[] => {
         } else if (inString >=0 && p[0] !== '"' && p[p.length-1] === '"') {
             result.push(cmdParts.slice(inString, i+1).join(' '))
             inString = -1
-        } else if (inString < 0) {
+        } else if (inString < 0 && p.length > 0) {
             result.push(p)
         }
     }
