@@ -46,7 +46,6 @@ const exec = async (cmd: string, log: boolean = false): Promise<ExecResult> => {
         const cmdParts = cmd.split(' ')
         const programName = cmdParts.shift()
 
-        console.log(`program name: ${programName}, args:`, concatStrings(cmdParts))
         const p = spawn(programName!, concatStrings(cmdParts))
         let stdout = '', stderr = ''
         p.stdout.on('data', (data) => {
@@ -158,7 +157,7 @@ export const gitProcess = async (params:GitProcessParams = {}): Promise<string> 
 
     // get versions
     console.log('input tag:', tag)
-    res = await unifiedExec(`git tag -l "sardines-version:*"`,'sardines', 'versioning')
+    res = await unifiedExec(`git tag -l "sardines-version:*"`, 'sardines', 'versioning')
     let latestVersion = '', currentVersion = ''
     for (let line of res.stdout.split('\n')) {
         if (!line) continue
@@ -175,9 +174,10 @@ export const gitProcess = async (params:GitProcessParams = {}): Promise<string> 
 
     // commit
     if (doCommit && currentVersion) {
+        const commitMsg = `${commit?commit:'sardines publisher automatic commit'}`
         await unifiedExec(`git add .`,'sardines', 'versioning')
-        await unifiedExec(`git commit -m "${commit?commit:'sardines publisher automatic commit'}"`,'sardines', 'versioning')
-        await unifiedExec(`git tag -a sardines-version:${currentVersion} ${commit?'-m "'+commit+'"':''}`, 'sardines', 'versioning')
+        await unifiedExec(`git commit -m "${commitMsg}"`,'sardines', 'versioning')
+        await unifiedExec(`git tag -a sardines-version:${currentVersion} -m "${commitMsg}"`, 'sardines', 'versioning')
     }
 
     // checkout sardines branch
