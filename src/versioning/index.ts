@@ -23,12 +23,31 @@ interface ExecResult {
     code: number
 }
 
+const concatStrings = (cmdParts: string[]): string[] => {
+    let result: string[] = []
+    let inString = -1 
+    for (let i=0; i<cmdParts.length;i++) {
+        let p = cmdParts[i]
+        if (inString < 0 && p[0] === '"' && p[p.length-1] !== '"') {
+            inString = i
+        } else if (inString >=0 && p[0] !== '"' && p[p.length-1] === '"') {
+            result.push(cmdParts.slice(inString, i+1).join(' '))
+            inString = -1
+        } else if (inString < 0) {
+            result.push(p)
+        }
+    }
+    return result
+}
+
 const exec = async (cmd: string, log: boolean = false): Promise<ExecResult> => {
     return new Promise((resolve, reject) => {
         if (!cmd) reject('command is empty')
         const cmdParts = cmd.split(' ')
         const programName = cmdParts.shift()
-        const p = spawn(programName!, cmdParts)
+
+        console.log(`program name: ${programName}, args:`, cmdParts)
+        const p = spawn(programName!, concatStrings(cmdParts))
         let stdout = '', stderr = ''
         p.stdout.on('data', (data) => {
             if (log) console.log(data.toString())
@@ -112,7 +131,7 @@ export const gitProcess = async (params:GitProcessParams = {}): Promise<string> 
     if (!originAddr) throw utils.unifyErrMesg('Can not find git remote push address', 'sardines', 'versioning')
     if (verbose) console.log('remote push addr:', originAddr, ', remote name:', originName)
 
-    // checkout branch
+    // get current branch
     res = await unifiedExec('git branch -a', 'sardines', 'versioning')
     lines = res.stdout.split('\n')
     let localBranch = '', remoteBranch = '', currentBranch = ''
@@ -136,18 +155,8 @@ export const gitProcess = async (params:GitProcessParams = {}): Promise<string> 
             }
         }
     }
-    if (!localBranch && remoteBranch) {
-        await unifiedExec(`git pull ${remote} ${branch}`, 'sardines', 'versioning')
-    }
-    if (!localBranch && !remoteBranch) {
-        await unifiedExec(`git checkout -b ${branch}`, 'sardines', 'versioning')
-    } else if (branch !== currentBranch) {
-        await unifiedExec(`git checkout ${branch}`, 'sardines', 'versioning')
-    }
 
-    
-
-    // versioning
+    // get versions
     console.log('input tag:', tag)
     res = await unifiedExec(`git tag -l "sardines-version:*"`,'sardines', 'versioning')
     let latestVersion = '', currentVersion = ''
@@ -164,12 +173,30 @@ export const gitProcess = async (params:GitProcessParams = {}): Promise<string> 
         currentVersion = '0.0.1'
     }
 
-    // Push
+    // commit
     if (doCommit && currentVersion) {
-        // Commit
         await unifiedExec(`git add .`,'sardines', 'versioning')
         await unifiedExec(`git commit -m "${commit?commit:'sardines publisher automatic commit'}"`,'sardines', 'versioning')
         await unifiedExec(`git tag -a sardines-version:${currentVersion} ${commit?'-m "'+commit+'"':''}`, 'sardines', 'versioning')
+    }
+
+    // checkout sardines branch
+    if (!localBranch && !remoteBranch) {
+        await unifiedExec(`git checkout -b ${branch}`, 'sardines', 'versioning')
+    } else if (branch !== currentBranch) {
+        await unifiedExec(`git checkout ${branch}`, 'sardines', 'versioning')
+    }
+    if (remoteBranch) {
+        await unifiedExec(`git pull ${remote} ${branch}`, 'sardines', 'versioning')
+    }
+    if (doCommit && currentBranch) {
+        await unifiedExec(`git merge ${currentBranch}`, 'sardines', 'versioning')
+    }
+
+    // 
+    
+    // Push
+    if (doCommit && currentVersion) {
         await unifiedExec(`git push ${remote} ${branch}`,'sardines', 'versioning')
     }
 
