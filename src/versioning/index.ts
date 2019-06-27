@@ -198,23 +198,21 @@ export const gitProcess = async (params:GitProcessParams = {}): Promise<string> 
         }   
     }
 
-    // checkout sardines branch
-    if (!localBranch && !remoteBranch) {
-        await unifiedExec(`git checkout -b ${branch}`, 'sardines', 'versioning')
-    } else if (branch !== currentBranch) {
-        await unifiedExec(`git checkout ${branch}`, 'sardines', 'versioning')
-    }
-    if (remoteBranch) {
-        await unifiedExec(`git pull ${remote} ${branch}`, 'sardines', 'versioning')
-    }
-    if (doCommit && currentBranch) {
-        await unifiedExec(`git merge ${currentBranch}`, 'sardines', 'versioning')
-    }
-
-    // 
-    
-    // Push
     if (doCommit && currentVersion) {
+        // checkout sardines branch
+        if (!localBranch && !remoteBranch) {
+            await unifiedExec(`git checkout -b ${branch}`, 'sardines', 'versioning')
+        } else if (branch !== currentBranch) {
+            await unifiedExec(`git checkout ${branch}`, 'sardines', 'versioning')
+        }
+        if (remoteBranch) {
+            await unifiedExec(`git pull ${remote} ${branch}`, 'sardines', 'versioning')
+        }
+        if (doCommit && currentBranch) {
+            await unifiedExec(`git merge ${currentBranch}`, 'sardines', 'versioning')
+        }
+
+        // Push
         await unifiedExec(`git push ${remote} ${branch}`,'sardines', 'versioning')
     }
 
