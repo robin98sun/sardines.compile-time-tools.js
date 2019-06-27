@@ -193,6 +193,7 @@ export const gitProcess = async (params:GitProcessParams = {}): Promise<string> 
                 console.log('error of git tag:', e)
                 if (e.code === 128) {
                     doCommit = false
+                    console.log('do commit:', doCommit)
                     throw utils.unifyErrMesg(`sardine version [${currentVersion}] already exists`, 'sardines', 'versioning')
                 }
             }
