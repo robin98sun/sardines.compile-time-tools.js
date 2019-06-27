@@ -101,8 +101,13 @@ export interface GitProcessParams {
     verbose?: boolean
 }
 export const gitProcess = async (params:GitProcessParams = {}): Promise<string> => {
-    let {remote, branch, doCommit, tag, tagMsg, version, commit, verbose} = Object.assign({
-        remote: 'dev', branch: 'sardines', doCommit: false, tag: '', tagMsg: '', version: '0.0.1', commit: '', verbose: true
+    let {
+        remote, branch, doCommit, tag, tagMsg,
+        version, patch, minor, major, commit, verbose
+    } = Object.assign({
+        remote: 'dev', branch: 'sardines', doCommit: false, tag: '', tagMsg: '',
+        version: '0.0.1', patch: true, minor: false, major: false,
+        commit: '', verbose: true
     }, params)
     if (!await isGitInstalled) throw utils.unifyErrMesg('git is not installed', 'sardines', 'versioning')
     let res:any = null
@@ -160,7 +165,6 @@ export const gitProcess = async (params:GitProcessParams = {}): Promise<string> 
     }
 
     // get versions
-    console.log('input tag:', tag)
     res = await unifiedExec(`git tag -l sardines-v*`, 'sardines', 'versioning')
     let latestVersion = '', currentVersion = ''
     for (let line of res.stdout.split('\n')) {
@@ -176,7 +180,10 @@ export const gitProcess = async (params:GitProcessParams = {}): Promise<string> 
         if (!semver.valid(latestVersion)) {
             throw utils.unifyErrMesg(`latest version ${latestVersion} is not valid`, 'sardines', 'versioning')
         }
-        const v = semver.inc(latestVersion, 'patch')
+        let v: string|null= latestVersion
+        if (v && patch) v = semver.inc(v, 'patch')
+        if (v && minor) v = semver.inc(v, 'minor')
+        if (v && major) v = semver.inc(v, 'major')
         if (v) currentVersion = v
         else throw utils.unifyErrMesg(`can not increase patch number of latest version ${latestVersion}`, 'sardines', 'versioning')
     } else {
