@@ -167,7 +167,8 @@ export const gitProcess = async (params:GitProcessParams = {}): Promise<string> 
         if (!line) continue
         const parts = line.split('-v')
         if (parts.length >=2) {
-            latestVersion = parts[1]
+            const v = parts[1]
+            if (!latestVersion || semver.gt(v, latestVersion)) latestVersion = v
         }
     }
 
