@@ -176,7 +176,15 @@ export const gitProcess = async (params:GitProcessParams = {}): Promise<string> 
     if (doCommit && currentVersion) {
         const commitMsg = `${commit?commit:'sardines publisher automatic commit'}`
         await unifiedExec(`git add .`,'sardines', 'versioning')
-        await unifiedExec(`git commit -m "${commitMsg}"`,'sardines', 'versioning')
+        try {
+            res = await unifiedExec(`git commit -m "${commitMsg}"`,'sardines', 'versioning')
+        } catch (e) {
+            if (e.stdout.indexOf('nothing to commit, working tree clean')) {
+                doCommit = false
+            } else {
+                throw e
+            }
+        }
         await unifiedExec(`git tag -a sardines-v${currentVersion} -m "${commitMsg}"`, 'sardines', 'versioning')
     }
 
