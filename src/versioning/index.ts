@@ -131,7 +131,7 @@ export const versioning = async (params:VersioningArguments = {}): Promise<Versi
         msg: 'git is not used under current directory'
     })
 
-    res = await unifiedExec({cmd: 'git remote -v'})
+    res = await unifiedExec({verbose, cmd: 'git remote -v'})
     if (!res.stdout) throw utils.unifyErrMesg('git remote is not set', 'sardines', 'versioning')
     let lines = res.stdout.split('\n')
 
@@ -158,7 +158,7 @@ export const versioning = async (params:VersioningArguments = {}): Promise<Versi
     if (verbose) console.log('remote push addr:', originAddr, ', remote name:', originName)
 
     // get current branch
-    res = await unifiedExec({cmd: 'git branch -a'})
+    res = await unifiedExec({verbose, cmd: 'git branch -a'})
     lines = res.stdout.split('\n')
     let localBranch = '', remoteBranch = '', currentBranch = ''
     for (let line of lines) {
@@ -183,7 +183,7 @@ export const versioning = async (params:VersioningArguments = {}): Promise<Versi
     }
 
     // get versions
-    res = await unifiedExec({cmd: `git tag -l sardines-v*`})
+    res = await unifiedExec({verbose, cmd: `git tag -l sardines-v*`})
     let latestVersion = '', currentVersion = ''
     for (let line of res.stdout.split('\n')) {
         if (!line) continue
@@ -215,9 +215,9 @@ export const versioning = async (params:VersioningArguments = {}): Promise<Versi
     // commit
     if (doCommit && currentVersion) {
         const commitMsg = `${commit?commit:'sardines publisher automatic commit'}`
-        await unifiedExec({cmd: `git add .`})
+        await unifiedExec({verbose, cmd: `git add .`})
         try {
-            await unifiedExec({cmd: `git commit -m "${commitMsg}"`})
+            await unifiedExec({verbose, cmd: `git commit -m "${commitMsg}"`})
         } catch (e) {
             if (e.stdout.indexOf('nothing to commit, working tree clean')) {
                 doCommit = false
@@ -227,7 +227,7 @@ export const versioning = async (params:VersioningArguments = {}): Promise<Versi
         }
         if (doCommit) {
             try {
-                await unifiedExec({cmd: `git tag -a sardines-v${currentVersion} -m "${commitMsg}"`})
+                await unifiedExec({verbose, cmd: `git tag -a sardines-v${currentVersion} -m "${commitMsg}"`})
             } catch (e) {
                 if (e.code === 128 || (e.error && e.error.code === 128)) {
                     doCommit = false
@@ -237,7 +237,7 @@ export const versioning = async (params:VersioningArguments = {}): Promise<Versi
 
             if (tag && tagMsg) {
                 try {
-                    await unifiedExec({cmd: `git tag -a ${tag} -m "${tagMsg}"`})
+                    await unifiedExec({verbose, cmd: `git tag -a ${tag} -m "${tagMsg}"`})
                 } catch (e) {
                     if (e.code === 128 || (e.error && e.error.code === 128)) {
                         doCommit = false
@@ -251,21 +251,21 @@ export const versioning = async (params:VersioningArguments = {}): Promise<Versi
     if (doCommit && currentVersion) {
         // checkout sardines branch
         if (!localBranch && !remoteBranch) {
-            await unifiedExec({cmd: `git checkout -b ${branch}`})
+            await unifiedExec({verbose, cmd: `git checkout -b ${branch}`})
         } else if (branch !== currentBranch) {
-            await unifiedExec({cmd: `git checkout ${branch}`})
+            await unifiedExec({verbose, cmd: `git checkout ${branch}`})
         }
         if (remoteBranch) {
-            await unifiedExec({cmd: `git pull ${remote} ${branch}`})
+            await unifiedExec({verbose, cmd: `git pull ${remote} ${branch}`})
         }
 
-        await unifiedExec({cmd: `git merge ${currentBranch}`})
+        await unifiedExec({verbose, cmd: `git merge ${currentBranch}`})
         // Push
-        await unifiedExec({cmd: `git push ${remote} ${branch}`})
+        await unifiedExec({verbose, cmd: `git push ${remote} ${branch}`})
     }
 
     // return to current working branch
-    await unifiedExec({cmd: `git checkout ${currentBranch}`})
+    await unifiedExec({verbose, cmd: `git checkout ${currentBranch}`})
 
     return {version: currentVersion, tag: `sardines-v${currentVersion}`, branch, git: originAddr}
 }
