@@ -16,6 +16,7 @@
 
 import { spawn } from 'child_process'
 import * as utils from 'sardines-utils'
+import * as semver from 'semver'
 
 interface ExecResult {
     stdout: string
@@ -94,12 +95,14 @@ export interface GitProcessParams {
     branch?: string
     doCommit?: boolean
     tag?: string
+    tagMsg?: string
+    version?: string
     commit?: string
     verbose?: boolean
 }
 export const gitProcess = async (params:GitProcessParams = {}): Promise<string> => {
-    let {remote, branch, doCommit, tag, commit, verbose} = Object.assign({
-        remote: 'dev', branch: 'sardines', doCommit: false, tag: '', commit: '', verbose: true
+    let {remote, branch, doCommit, tag, tagMsg, version, commit, verbose} = Object.assign({
+        remote: 'dev', branch: 'sardines', doCommit: false, tag: '', tagMsg: '', version: '0.0.1', commit: '', verbose: true
     }, params)
     if (!await isGitInstalled) throw utils.unifyErrMesg('git is not installed', 'sardines', 'versioning')
     let res:any = null
@@ -167,10 +170,20 @@ export const gitProcess = async (params:GitProcessParams = {}): Promise<string> 
             latestVersion = parts[1]
         }
     }
-    if (latestVersion) {
+    if (latestVersion && version === '0.0.1') {
+        if (!semver.valid(latestVersion)) {
+            throw utils.unifyErrMesg(`latest version ${latestVersion} is not valid`, 'sardines', 'versioning')
+        }
+        const v = semver.inc(latestVersion, 'patch')
+        if (v) currentVersion = v
+        else throw utils.unifyErrMesg(`can not increase patch number of latest version ${latestVersion}`, 'sardines', 'versioning')
         console.log('latest version:', latestVersion)
     } else {
-        currentVersion = '0.0.1'
+        currentVersion = version
+    }
+
+    if (!semver.valid(currentVersion)) {
+        throw utils.unifyErrMesg(`current version ${currentVersion} is not valid`, 'sardines', 'versioning')
     }
 
     // commit
@@ -193,6 +206,17 @@ export const gitProcess = async (params:GitProcessParams = {}): Promise<string> 
                 if (e.code === 128 || (e.error && e.error.code === 128)) {
                     doCommit = false
                     throw utils.unifyErrMesg(`sardine version [${currentVersion}] already exists`, 'sardines', 'versioning')
+                } else throw e
+            }
+
+            if (tag && tagMsg) {
+                try {
+                    await unifiedExec(`git tag -a ${tag} -m "${tagMsg}"`, 'sardines', 'versioning')
+                } catch (e) {
+                    if (e.code === 128 || (e.error && e.error.code === 128)) {
+                        doCommit = false
+                        throw utils.unifyErrMesg(`sardine version [${currentVersion}] already exists`, 'sardines', 'versioning')
+                    } else throw e
                 }
             }
         }   
@@ -208,10 +232,8 @@ export const gitProcess = async (params:GitProcessParams = {}): Promise<string> 
         if (remoteBranch) {
             await unifiedExec(`git pull ${remote} ${branch}`, 'sardines', 'versioning')
         }
-        if (doCommit && currentBranch) {
-            await unifiedExec(`git merge ${currentBranch}`, 'sardines', 'versioning')
-        }
 
+        await unifiedExec(`git merge ${currentBranch}`, 'sardines', 'versioning')
         // Push
         await unifiedExec(`git push ${remote} ${branch}`,'sardines', 'versioning')
     }
