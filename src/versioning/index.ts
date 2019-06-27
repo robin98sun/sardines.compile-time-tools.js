@@ -219,7 +219,7 @@ export const versioning = async (params:VersioningArguments = {}): Promise<Versi
         try {
             await unifiedExec({verbose, cmd: `git commit -m "${commitMsg}"`})
         } catch (e) {
-            if (e.stdout.indexOf('nothing to commit, working tree clean')) {
+            if (e && e.stdout && e.stdout.indexOf('nothing to commit, working tree clean')) {
                 doCommit = false
             } else {
                 throw e
