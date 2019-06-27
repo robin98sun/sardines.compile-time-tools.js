@@ -90,7 +90,7 @@ export const isGitInstalled = async (): Promise<boolean> => {
     return false
 }
 
-export interface GitProcessParams {
+export interface VersioningArguments {
     remote?: string
     branch?: string
     doCommit?: boolean
@@ -101,12 +101,13 @@ export interface GitProcessParams {
     verbose?: boolean
 }
 
-export interface GitCodeVersion {
+export interface Version {
     version: string
     tag: string
     branch: string
+    git: string
 }
-export const gitProcess = async (params:GitProcessParams = {}): Promise<GitCodeVersion> => {
+export const versioning = async (params:VersioningArguments = {}): Promise<Version> => {
     let {
         remote, branch, doCommit, tag, tagMsg,
         version, patch, minor, major, commit, verbose
@@ -255,10 +256,10 @@ export const gitProcess = async (params:GitProcessParams = {}): Promise<GitCodeV
     // return to current working branch
     await unifiedExec(`git checkout ${currentBranch}`, 'sardines', 'publisher')
 
-    return {version: currentVersion, tag: `sardines-v${currentVersion}`, branch}
+    return {version: currentVersion, tag: `sardines-v${currentVersion}`, branch, git: originAddr}
 }
 
-gitProcess({remote: 'dev', doCommit: true, verbose: false}).then(res => {
+versioning({remote: 'dev', doCommit: true, verbose: false}).then(res => {
     console.log('\nfinal result:', res)
 }).catch(e => {
     console.log('error:', e)
