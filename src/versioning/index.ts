@@ -166,12 +166,11 @@ export const gitProcess = async (params:GitProcessParams = {}): Promise<string> 
     for (let line of res.stdout.split('\n')) {
         if (!line) continue
         const parts = line.split('-v')
-        console.log('line:', line, 'parts:', parts)
         if (parts.length >=2) {
             latestVersion = parts[1]
         }
     }
-    console.log('latestVersion:', latestVersion, 'currentVersion:', currentVersion)
+
     if (latestVersion && version === '0.0.1') {
         if (!semver.valid(latestVersion)) {
             throw utils.unifyErrMesg(`latest version ${latestVersion} is not valid`, 'sardines', 'versioning')
@@ -179,7 +178,6 @@ export const gitProcess = async (params:GitProcessParams = {}): Promise<string> 
         const v = semver.inc(latestVersion, 'patch')
         if (v) currentVersion = v
         else throw utils.unifyErrMesg(`can not increase patch number of latest version ${latestVersion}`, 'sardines', 'versioning')
-        console.log('latest version:', latestVersion)
     } else {
         currentVersion = version
     }
