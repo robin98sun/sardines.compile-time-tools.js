@@ -277,6 +277,7 @@ export const versioning = async (params:VersioningArguments = {}): Promise<Versi
     }
 }
 
+
 // Test
 versioning({remote: 'dev', doCommit: true, verbose: false}).then(res => {
     console.log('\nfinal result:', res)
