@@ -267,7 +267,12 @@ export const versioning = async (params:VersioningArguments = {}): Promise<Versi
     // return to current working branch
     await unifiedExec({verbose, cmd: `git checkout ${currentBranch}`})
 
-    return {version: doCommit?currentVersion:latestVersion, tag: `sardines-v${doCommit?currentVersion:latestVersion}`, branch, git: originAddr}
+    return {
+        version: doCommit?currentVersion:latestVersion,
+        tag: `sardines-v${doCommit?currentVersion:latestVersion}`,
+        branch: remoteBranch?branch:'', 
+        git: originAddr
+    }
 }
 
 // Test
