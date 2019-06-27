@@ -46,7 +46,7 @@ const exec = async (cmd: string, log: boolean = false): Promise<ExecResult> => {
         const cmdParts = cmd.split(' ')
         const programName = cmdParts.shift()
 
-        console.log(`executing command ${programName}, args:`, concatStrings(cmdParts))
+        // console.log(`executing command ${programName}, args:`, concatStrings(cmdParts))
         const p = spawn(programName!, concatStrings(cmdParts))
         let stdout = '', stderr = ''
         p.stdout.on('data', (data) => {
@@ -178,7 +178,7 @@ export const gitProcess = async (params:GitProcessParams = {}): Promise<string> 
         const commitMsg = `${commit?commit:'sardines publisher automatic commit'}`
         await unifiedExec(`git add .`,'sardines', 'versioning')
         try {
-            res = await unifiedExec(`git commit -m "${commitMsg}"`,'sardines', 'versioning')
+            await unifiedExec(`git commit -m "${commitMsg}"`,'sardines', 'versioning')
         } catch (e) {
             if (e.stdout.indexOf('nothing to commit, working tree clean')) {
                 doCommit = false
@@ -186,7 +186,16 @@ export const gitProcess = async (params:GitProcessParams = {}): Promise<string> 
                 throw e
             }
         }
-        await unifiedExec(`git tag -a sardines-v${currentVersion} -m "${commitMsg}"`, 'sardines', 'versioning')
+        if (doCommit) {
+            try {
+                await unifiedExec(`git tag -a sardines-v${currentVersion} -m "${commitMsg}"`, 'sardines', 'versioning')
+            } catch (e) {
+                if (e.code === 128) {
+                    doCommit = false
+                    throw utils.unifyErrMesg(`sardine version [${currentVersion}] already exists`, 'sardines', 'versioning')
+                }
+            }
+        }   
     }
 
     // checkout sardines branch
