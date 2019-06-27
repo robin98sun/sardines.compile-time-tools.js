@@ -2,6 +2,7 @@
 import * as npm from 'npm'
 import fetch from 'node-fetch'
 import * as utils from 'sardines-utils'
+// import {Version, VersioningArguments, versioning} from '../versioning'
 
 let npmInst: any = null
 
