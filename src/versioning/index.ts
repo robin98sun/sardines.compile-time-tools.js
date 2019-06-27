@@ -112,6 +112,7 @@ export interface Version {
     tag: string
     branch: string
     git: string
+    isNew?: boolean
 }
 export const versioning = async (params:VersioningArguments = {}): Promise<Version> => {
     let {
@@ -271,7 +272,8 @@ export const versioning = async (params:VersioningArguments = {}): Promise<Versi
         version: doCommit?currentVersion:latestVersion,
         tag: `sardines-v${doCommit?currentVersion:latestVersion}`,
         branch: remoteBranch?branch:'', 
-        git: originAddr
+        git: originAddr,
+        isNew: doCommit
     }
 }
 
