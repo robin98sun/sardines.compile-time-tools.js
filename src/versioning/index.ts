@@ -166,6 +166,7 @@ export const gitProcess = async (params:GitProcessParams = {}): Promise<string> 
     for (let line of res.stdout.split('\n')) {
         if (!line) continue
         const parts = line.split('-v')
+        console.log(line, parts)
         if (parts.length >=2) {
             latestVersion = parts[1]
         }
