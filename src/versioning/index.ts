@@ -170,6 +170,7 @@ export const gitProcess = async (params:GitProcessParams = {}): Promise<string> 
             latestVersion = parts[1]
         }
     }
+    console.log('latestVersion:', latestVersion, 'currentVersion:', currentVersion)
     if (latestVersion && version === '0.0.1') {
         if (!semver.valid(latestVersion)) {
             throw utils.unifyErrMesg(`latest version ${latestVersion} is not valid`, 'sardines', 'versioning')
