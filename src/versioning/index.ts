@@ -100,7 +100,13 @@ export interface GitProcessParams {
     commit?: string
     verbose?: boolean
 }
-export const gitProcess = async (params:GitProcessParams = {}): Promise<string> => {
+
+export interface GitCodeVersion {
+    version: string
+    tag: string
+    branch: string
+}
+export const gitProcess = async (params:GitProcessParams = {}): Promise<GitCodeVersion> => {
     let {
         remote, branch, doCommit, tag, tagMsg,
         version, patch, minor, major, commit, verbose
@@ -249,10 +255,10 @@ export const gitProcess = async (params:GitProcessParams = {}): Promise<string> 
     // return to current working branch
     await unifiedExec(`git checkout ${currentBranch}`, 'sardines', 'publisher')
 
-    return ''
+    return {version: currentVersion, tag: `sardines-v${currentVersion}`, branch}
 }
 
-gitProcess({remote: 'dev', doCommit: true}).then(res => {
+gitProcess({remote: 'dev', doCommit: true, verbose: false}).then(res => {
     console.log('\nfinal result:', res)
 }).catch(e => {
     console.log('error:', e)
