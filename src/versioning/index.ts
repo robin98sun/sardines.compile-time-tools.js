@@ -190,9 +190,8 @@ export const gitProcess = async (params:GitProcessParams = {}): Promise<string> 
             try {
                 await unifiedExec(`git tag -a sardines-v${currentVersion} -m "${commitMsg}"`, 'sardines', 'versioning')
             } catch (e) {
-                if (e.code === 128 || e.error && e.error.code === 128) {
+                if (e.code === 128 || (e.error && e.error.code === 128)) {
                     doCommit = false
-                    console.log('do commit:', doCommit)
                     throw utils.unifyErrMesg(`sardine version [${currentVersion}] already exists`, 'sardines', 'versioning')
                 }
             }
