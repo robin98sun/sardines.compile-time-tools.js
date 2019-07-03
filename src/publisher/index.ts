@@ -10,6 +10,7 @@ import * as fs from 'fs'
 export { npmCmd } from './utils'
 import { GitVersioning } from '../versioning'
 import { exit } from 'process'
+import * as path from 'path'
 
 
 export interface PublisherArguments {
@@ -171,17 +172,22 @@ export const publish = async (args: PublisherArguments) => {
 
 
     const serviceList = services.map((serv: any) => {
-        return {
-            application_id: appInDB.id,
-            module: serv.module,
-            name: serv.name,
-            arguments: serv.arguments,
-            return_type: serv.returnType,
-            is_async: serv.isAsync,
-            version: currentVersion.version,
-            source_id: sourceInDB.id,
-            is_public: isPublic,
-            file_path: serv.filepath
+        const p = path.resolve(executableCodeDir, './' + serv.filepath)
+        if (fs.existsSync(p) && fs.lstatSync(p).isFile) {
+            return {
+                application_id: appInDB.id,
+                module: serv.module,
+                name: serv.name,
+                arguments: serv.arguments,
+                return_type: serv.returnType,
+                is_async: serv.isAsync,
+                version: currentVersion.version,
+                source_id: sourceInDB.id,
+                is_public: isPublic,
+                file_path: serv.filepath
+            }
+        } else {
+            throw utils.unifyErrMesg(`Code file does not exist for service [${application}:${serv.module}:${serv.name}@${currentVersion.version}]`, 'sardines', 'publisher')
         }
     })
 
