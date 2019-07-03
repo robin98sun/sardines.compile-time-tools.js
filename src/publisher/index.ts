@@ -1,90 +1,200 @@
 // import * as utils from 'sardines-utils'
-import * as npm from 'npm'
-import fetch from 'node-fetch'
 import * as utils from 'sardines-utils'
-// import {Version, VersioningArguments, versioning} from '../versioning'
+import {
+    loginRepository, signUpRepository,
+    createOrUpdateSource,
+    createOrUpdateApplication,
+    createOrUpdateService
+} from './utils'
+import * as fs from 'fs'
+export { npmCmd } from './utils'
+import { GitVersioning } from '../versioning'
+import { exit } from 'process'
 
-let npmInst: any = null
 
-export const npmCmd = (command: string, args: string[]) => {
-    return new Promise((resolve, reject) => {
-        const cmd = () => {
-            (<{[key: string]: any}>(npmInst.commands))[command](args, (err:any, data: any) => {
-                if (err) {
-                    reject(err)
-                } else {
-                    resolve(data)
-                }
-            })
-        }
-        if (!npmInst) {
-            npm.load((err, inst) => {
-                if (err) reject(err)
-                else {
-                    // console.log('npm load data:', data)
-                    npmInst = inst
-                    cmd()
-                }
-            })
-        } else {
-            cmd()
-        }
-    })
-}
-
-export const signUpRepository = async(repoUrl: string, username: string, password: string) => {
-    if (!repoUrl) throw utils.unifyErrMesg('repository url is missing', 'sardines', 'publisher')
-    if (!username) throw utils.unifyErrMesg('repository username is missing', 'sardines', 'publisher')
-    if (!password) throw utils.unifyErrMesg('repository password is missing', 'sardines', 'publisher')
-    let res:any = await fetch(`${repoUrl}/repository/signUp`, {
-        method: 'put',
-        body: JSON.stringify({ account: { name: username }, password }),
-        headers: { 'content-type': 'application/json'}
-    })
-    try {
-        res = await res.text()
-        return res
-    } catch (e) {
-        throw utils.unifyErrMesg(e, 'sardines', 'publisher sign up')
-    }
-}
-
-export const loginRepository = async(repoUrl: string, username: string, password: string) => {
-    if (!repoUrl) throw utils.unifyErrMesg('repository url is missing', 'sardines', 'publisher')
-    if (!username) throw utils.unifyErrMesg('repository username is missing', 'sardines', 'publisher')
-    if (!password) throw utils.unifyErrMesg('repository password is missing', 'sardines', 'publisher')
-    let res:any = await fetch(`${repoUrl}/repository/signIn`, {
-        method: 'put',
-        body: JSON.stringify({ account: { name: username }, password }),
-        headers: { 'content-type': 'application/json'}
-    })
-    try {
-        res = await res.text()
-        return res
-    } catch (e) {
-        throw utils.unifyErrMesg(e, 'sardines', 'publisher login')
-    }
-}
-
-export interface RepositoryAuth {
-    url: string
+export interface PublisherArguments {
+    url?: string
     username: string
     password: string
+    executableCodeDir?: string
+    serviceDefinitionFile?: string
+    patch?: boolean
+    minor?: boolean
+    major?: boolean
+    version?: string
+    tag?: string
+    tagMsg?: string
+    commit?: string,
+    remote?: string,
+    branch?: string,
+    verbose?: boolean
 }
 
-export const publish = async (repo: RepositoryAuth) => {
-    let token: any = ''
-    try {
-        token = await loginRepository(repo.url, repo.username, repo.password)
-        if (token && typeof token === 'object' && token.error) {
-            console.log(token)
-            token = await signUpRepository(repo.url, repo.username, repo.password)
-            if (token && typeof token === 'object' && token.error){
-                throw token
-            }
-        } 
-        console.log('token:', token)
-    } catch (e) {
-        console.log('ERROR when trying to login register:', e)
+export const publish = async (args: PublisherArguments) => {
+    let { url, username, password, executableCodeDir, serviceDefinitionFile,
+        patch, minor, major, version, tag, tagMsg, commit,
+        remote, branch, verbose, isPublic
+    } = Object.assign({
+        url: 'http://localhost:8080',
+        executableCodeDir: './lib',
+        serviceDefinitionFile: './sardines.json',
+        verbose: false,
+        patch: true,
+        minor: false,
+        major: false,
+        remote: 'origin',
+        branch: 'sardines',
+        isPublic: true,
+        version: '0.0.1',
+        tagMsg: 'sardines publisher automatic tag',
+        commit: 'sardines publisher automatic commit'
+    }, args)
+    
+    // Process the service definition file
+    if (!serviceDefinitionFile) {
+        throw utils.unifyErrMesg('Can not publish service without its definition')
     }
+    let serviceDefinitions:any = null
+    try {
+        serviceDefinitions = JSON.parse(fs.readFileSync(serviceDefinitionFile).toString())
+    } catch (e) {
+        throw utils.unifyErrMesg(`ERROR when trying to read service definition file [${serviceDefinitionFile}]`, 'sardines', 'publisher')
+    }
+    if (!serviceDefinitions) {
+        throw utils.unifyErrMesg(`Service definition file [${serviceDefinitionFile}] is empty`, 'sardines', 'publisher')
+    }
+
+    const { application, services } = serviceDefinitions
+    if (!application || typeof application !== 'string') {
+        throw utils.unifyErrMesg(`Application name is missing in the service definition file`)
+    }
+
+    if (!services || !Array.isArray(services) || services.length <= 0) {
+        throw utils.unifyErrMesg(`Services are not found in the service definition file`)
+    }
+
+    // Check the executable code dir
+    if (!executableCodeDir) {
+        throw utils.unifyErrMesg('Can not publish executable code without its directory path', 'sardines', 'publisher')
+    }
+
+    // Get and set git version
+    if (verbose) {
+        console.log('')
+        console.log('')
+        console.log('versioning...')
+        console.log('')
+    }
+    const currentVersion = await GitVersioning({
+        patch, minor, major, version, tag, tagMsg, commit,
+        remote, branch, 
+        verbose,
+        doCommit: true
+    })
+    if (verbose) {
+        console.log('')
+        console.log('versioning finished')
+        console.log('')
+        console.log('')
+    }
+    if (!currentVersion.isNew) {
+        console.log('Nothing to do with the source code')
+        exit(0)
+    }
+
+    // Sign in or sign up
+    let token: any = await loginRepository(url, username, password)
+    if (token && typeof token === 'object' && token.error) {
+        token = await signUpRepository(url, username, password)
+        if (token && typeof token === 'object' && token.error){
+            throw token
+        }
+    } 
+    if (verbose) {
+        console.log('token:', token)
+    }
+
+    // Update application info 
+    // interface Application {
+    //     id?: string
+    //     name?: string
+    //     is_public?: boolean
+    //     owner?: string
+    //     developers?: string[]
+    //     last_access_on?: any
+    // }
+    const appInDB = await createOrUpdateApplication(url, {name: application}, token)
+    if (verbose) {
+        console.log('app:', appInDB)
+    }
+
+    // Create or update source
+    // enum SourceType {
+    //     git = 'git'
+    // }
+    
+    // interface Source {
+    //     id?: string
+    //     type: string
+    //     URL: string
+    //     root: string
+    //     last_access_on?: any
+    // }
+    const source: any = {
+        type: 'git',
+        root: executableCodeDir,
+        URL: currentVersion.git
+    }
+    let sourceInDB = await createOrUpdateSource(url, source, token)
+    if (verbose) {
+        console.log('source:', sourceInDB)
+    }
+
+    // Create or update services
+    // interface Service {
+    //     id?: string
+    //     application?: string
+    //     application_id?: string
+    //     module: string
+    //     name: string
+    //     arguments: ServiceArgument[]
+    //     return_type: string
+    //     is_async: boolean
+    //     version?: string
+    //     source_id?: string
+    //     is_public?: boolean
+    //     owner?: string
+    //     developers?: string[]
+    //     provider_settings?: any[]
+    //     init_params?: any
+    // }
+
+
+    const serviceList = services.map((serv: any) => {
+        return {
+            application_id: appInDB.id,
+            module: serv.module,
+            name: serv.name,
+            arguments: serv.arguments,
+            return_type: serv.returnType,
+            is_async: serv.isAsync,
+            version: currentVersion.version,
+            source_id: sourceInDB.id,
+            is_public: isPublic,
+            file_path: serv.filepath
+        }
+    })
+
+    if (verbose) {
+        console.log('services to upload:')
+        utils.inspectedLog(serviceList)
+    }
+    const res = await createOrUpdateService(url, serviceList, token)
+    if (verbose) {
+        console.log('created or updated services:')
+        utils.inspectedLog(res)
+    }
+    return res
 }
+
+

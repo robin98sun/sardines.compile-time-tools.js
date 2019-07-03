@@ -1,3 +1,3 @@
 export { compile } from './compiler'
 export { npmCmd, publish } from './publisher'
-export { Version, VersioningArguments, versioning } from './versioning'
+export { Version, VersioningArguments, GitVersioning, GitVersionTag } from './versioning'
