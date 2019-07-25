@@ -113,8 +113,8 @@ export const compile = async (compilerSettings: any, targetFiles: string[]) => {
             // process the source file
             // Parse a file
             const [identifiers, referencedTypes, importedIds, proxyIds] = gatherExports(sourceFilePath);
-    
-            services = await transform(fileName, sardineFileName, sourceFilePath, identifiers, referencedTypes, importedIds, proxyIds, (line:string, lineIndex:number) => {
+            const appName = compilerSettings.application
+            services = await transform(appName, fileName, sardineFileName, sourceFilePath, identifiers, referencedTypes, importedIds, proxyIds, (line:string, lineIndex:number) => {
                 if (lineIndex === 0) {
                     if (!compilerSettings.only_validate) {
                         fs.writeFileSync(intermediateFilePath, line)

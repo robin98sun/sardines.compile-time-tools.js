@@ -1,15 +1,18 @@
 import { IdentifierSyntax } from './parser'
 import * as path from 'path'
 
-export const genProxyCode = (item: IdentifierSyntax) => {
-    let line = `export const ${item.name} = ${item.isAsync? 'async' : ''} (${item.param?item.param.map(x => x.text).join(', '):''}) => {\n` + 
-    // TODO: generate service name
-    // register service on the root node
-    // check whether the service should run locally or remotely
-
-    // run service locally
-    `   return ${item.isAsync? 'await' : ''} origin.${item.name}(${item.param?item.param.map(x => x.name).join(', '):''})\n` +
-    `}\n`
+export const genProxyCode = (appName: string, item: IdentifierSyntax, serviceInfo: Service) => {
+    let line = `export const ${item.name} = ${item.isAsync? 'async' : ''} (${item.param?item.param.map(x => x.text).join(', '):''}) => {
+        if (core.isRemote(${appName}, ${serviceInfo.module}, ${serviceInfo.name})) {
+           return await core.invoke({
+               application: ${appName},
+               module: ${serviceInfo.module},
+               name: ${serviceInfo.name}
+           }, ${item.param?item.param.map(x => x.name).join(', '):''})
+       } else {
+          return ${item.isAsync? 'await' : ''} origin.${item.name}(${item.param?item.param.map(x => x.name).join(', '):''})
+       }
+    }`
 
     return line
 }

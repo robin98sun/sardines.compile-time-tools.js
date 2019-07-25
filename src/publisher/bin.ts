@@ -61,7 +61,7 @@ if (!fs.lstatSync(exeDir).isDirectory()) {
 }
 
 if (!fs.existsSync(serviceDefinitionFile)) {
-    console.error(`Service definition file [${exeDir}] does not exist`)
+    console.error(`Service definition file [${serviceDefinitionFile}] does not exist`)
     proc.exit(1)
 }
 
@@ -101,7 +101,7 @@ if (typeof params['verbose'] === 'boolean') args.verbose= params['verbose']
 if (typeof params['private'] === 'boolean') args.isPublic = !params['private']
 
 publish(args).then(res => {
-    console.log('result of publish:', res)
+    console.log(`successfully published ${res.length} services`)
 }).catch(e => {
     console.error(`error when publishing:`, e)
 })
