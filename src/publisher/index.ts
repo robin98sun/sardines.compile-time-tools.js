@@ -1,13 +1,13 @@
 // import * as utils from 'sardines-utils'
 import * as utils from 'sardines-utils'
-import {
+import { Repository } from 'sardines-core'
+let {
     loginRepository, signUpRepository,
     createOrUpdateSource,
     createOrUpdateApplication,
     createOrUpdateService
-} from './utils'
+} = Repository.Client
 import * as fs from 'fs'
-export { npmCmd } from './utils'
 import { GitVersioning } from '../versioning'
 import { exit } from 'process'
 import * as path from 'path'
