@@ -10,8 +10,7 @@
         "@types/node": "^12.0.2",
         "@types/npm": "^2.0.30",
         "@types/semver": "^6.0.1",
-        "sardines-utils": "file:../sardines.utils.js",
-        "sardines-core": "file:../sardines.core.js",
+        "sardines-core": "*",
         "semver": "^6.1.2",
         "typescript": "^3.4.5"
     },
@@ -27,29 +26,24 @@
     ],
     "license": "ISC",
     "bin": {
-        "sardines-compiler": "lib/prod/compiler/bin.js",
-        "sardines-publisher": "lib/prod/publisher/bin.js"
+        "sardines-compiler": "lib/compiler/bin.js",
+        "sardines-publisher": "lib/publisher/bin.js"
     },
-    "main": "lib/prod/index.js",
+    "main": "lib/index.js",
+    "type": "lib/index.d.js",
     "name": "sardines-compile-time-tools",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/robin-98/sardines.compile-time-tools.js.git"
     },
     "scripts": {
-        "buildProd": "npm run clearProd && tsc --build conf/tsconfig.prod.json && npm run makeExecProdCompiler && npm run makeExecProdPublisher",
-        "prod": "npm run buildProd && node lib/prod/index.js",
-        "buildDev": "npm run clearDev && tsc --build conf/tsconfig.dev.json && npm run makeExecDevCompiler",
-        "dev": "npm run buildDev && node lib/dev/index.js",
+        "build": "npm run clear && tsc --build conf/tsconfig.json && npm run makeExecCompiler && npm run makeExecPublisher",
+        "prepublish": "npm run build", 
         "testSuccess": "npm run prod -- example -recompile -gen-services -verbose",
         "testFail": "npm run prod -- example -recompile -gen-services -verbose -validate",
         "clear": "rm -rf lib/*",
-        "clearDev": "rm -rf lib/dev",
-        "clearProd": "rm -rf lib/prod",
-        "makeExecProdCompiler": "file=lib/prod/compiler/bin.js; { echo '#!/usr/bin/env node'; cat $file; } > ${file}.tmp && mv ${file}.tmp $file && chmod a+x $file",
-        "makeExecProdPublisher": "file=lib/prod/publisher/bin.js; { echo '#!/usr/bin/env node'; cat $file; } > ${file}.tmp && mv ${file}.tmp $file && chmod a+x $file",
-        "makeExecDevCompiler": "file=lib/dev/compiler/bin.js; { echo '#!/usr/bin/env node'; cat $file; } > ${file}.tmp && mv ${file}.tmp $file && chomd a+x $file",
-        "makeExecDevPublisher": "file=lib/dev/publisher/bin.js; { echo '#!/usr/bin/env node'; cat $file; } > ${file}.tmp && mv ${file}.tmp $file && chmod a+x $file"
+        "makeExecCompiler": "file=lib/compiler/bin.js; { echo '#!/usr/bin/env node'; cat $file; } > ${file}.tmp && mv ${file}.tmp $file && chmod a+x $file",
+        "makeExecPublisher": "file=lib/publisher/bin.js; { echo '#!/usr/bin/env node'; cat $file; } > ${file}.tmp && mv ${file}.tmp $file && chmod a+x $file",
     },
     "version": "1.0.0"
 }

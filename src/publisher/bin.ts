@@ -1,4 +1,4 @@
-import * as utils from 'sardines-utils'
+import { utils } from 'sardines-core'
 import { publish } from './index'
 import * as proc from 'process'
 import * as fs from 'fs'
@@ -6,20 +6,17 @@ import * as fs from 'fs'
 let {params} = utils.parseArgs()
 if (params.test) {
     publish({
-        url: 'http://localhost:8080',
-        username: 'dietitian-dev',
-        password: 'Startup@2019'
+        // url: 'http://localhost:8080',
+        // username: 'dietitian-dev',
+        // password: 'Startup@2019'
     })
 }
 
 if (params.help) {
     console.log(`
+    --config                  : set the sardines config file, default is ./sardines-config.json
     --private                 : set the service as private, default is false
-    --repo=<repo url>         : Url of repository, default is 'http://localhost:8080'
-    --user=<user name>        : User of repository, required, the user would be signed up if does not exist
-    --pass=<password>         : Password of the user, required
-    --exe-dir=<dir>           : Directory path of the executable code files, default is './lib'
-    --def=<path>              : Service definition file path, default is './sardines.json'
+    --local=<path>            : Service definition file path, default is './sardines-local-services.json'
     --patch                   : Increase patch number of version, default is true
     --minor                   : Increase minor number of version, default is false
     --major                   : Increase major number of version, default is false
@@ -31,34 +28,41 @@ if (params.help) {
     --git-branch=<branch name>: select the git branch to store version information, default is 'sardines'
     --verbose                 : verbose mode, log everything on the stdout
     `)
+    // --exe-dir=<dir>           : Directory path of the executable code files, default is './lib'
+    // --repo=<repo url>         : Url of repository, default is 'http://localhost:8080'
+    // --user=<user name>        : User of repository, required, the user would be signed up if does not exist
+    // --pass=<password>         : Password of the user, required
     proc.exit(0)
 }
 
-const repo = params.repo ? params.repo : 'http://localhost:8080'
-const user = params.user
-const pass = params.pass
-const exeDir = params['exe-dir'] ? params['exe-dir'] : './lib'
-const serviceDefinitionFile = params['def'] ? params['def'] : './sardines.json'
+// const repo = params.repo ? params.repo : 'http://localhost:8080'
+// const repo = params.repo
+// const user = params.user
+// const pass = params.pass
+// const exeDir = params['exe-dir'] ? params['exe-dir'] : './lib'
+// const exeDir = params['exe-dir']
+const serviceDefinitionFile = params['local'] ? params['local'] : './sardines-local-services.json'
+const sardinesConfigFile = params['config'] ? params['config'] : './sardines-config.json'
 
-if (!user) {
-    console.error('Repository user name is missing')
-    proc.exit(1)
-}
+// if (!user) {
+//     console.error('Repository user name is missing')
+//     proc.exit(1)
+// }
 
-if (!pass) {
-    console.error('Repository password is missing')
-    proc.exit(1)
-}
+// if (!pass) {
+//     console.error('Repository password is missing')
+//     proc.exit(1)
+// }
 
-if (!fs.existsSync(exeDir)) {
-    console.error(`Executable code directory [${exeDir}] does not exist`)
-    proc.exit(1)
-}
+// if (!fs.existsSync(exeDir)) {
+//     console.error(`Executable code directory [${exeDir}] does not exist`)
+//     proc.exit(1)
+// }
 
-if (!fs.lstatSync(exeDir).isDirectory()) {
-    console.error(`Executable code directory [${exeDir}] is not a valid directory`)
-    proc.exit(1)
-}
+// if (!fs.lstatSync(exeDir).isDirectory()) {
+//     console.error(`Executable code directory [${exeDir}] is not a valid directory`)
+//     proc.exit(1)
+// }
 
 if (!fs.existsSync(serviceDefinitionFile)) {
     console.error(`Service definition file [${serviceDefinitionFile}] does not exist`)
@@ -70,12 +74,15 @@ if (!fs.lstatSync(serviceDefinitionFile).isFile()) {
     proc.exit(1)
 }
 
+
+
 const args: any = {
-    url: repo,
-    username: user,
-    password: pass,
-    executableCodeDir: exeDir,
-    serviceDefinitionFile: serviceDefinitionFile,
+    // url: repo,
+    // username: user,
+    // password: pass,
+    // executableCodeDir: exeDir,
+    serviceDefinitionFile,
+    sardinesConfigFile,
     // major: (params['major']),
     // minor: (params['minor']),
     // patch: (params['patch']),

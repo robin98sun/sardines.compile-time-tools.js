@@ -8,7 +8,8 @@ export const ${item.name} = ${item.isAsync? 'async' : ''} (${item.param?item.par
         ${item.isAsync? 'return await' : 'return new Promise((resolve, reject) => {\n           '} core.invoke({
         ${item.isAsync? '' : '    '}    application: '${appName}',
         ${item.isAsync? '' : '    '}    module: '${serviceInfo.module}',
-        ${item.isAsync? '' : '    '}    service: '${serviceInfo.name}'
+        ${item.isAsync? '' : '    '}    name: '${serviceInfo.name}',
+        ${item.isAsync? '' : '    '}    version: '*'
         ${item.isAsync? '' : '    '}}` + 
         `${item.param && item.param.length > 0 ? ', ' : ''}` +
         `${item.param?item.param.map(x => x.name).join(', '):''})` +
@@ -46,8 +47,8 @@ export const genService = (item: IdentifierSyntax, fileName:string, sourceFilePa
     let moduleName = (fileName === 'index') ? dirname : `${dirname}/${fileName}`
     if (moduleName[0] !== '/') moduleName = '/' + moduleName
     if (moduleName.toLowerCase() === '/src') moduleName = '/'
-    else if (moduleName.toLowerCase().indexOf('/src/') === 0) {
-        moduleName = moduleName.substr(4)
+    else if (moduleName.toLowerCase().indexOf('/src/') >= 0) {
+        moduleName = moduleName.substr(moduleName.toLowerCase().indexOf('/src/') + 4)
     }
     let filepath = sourceFilePath
     if (filepath.indexOf('src') === 0) filepath = filepath.substr(3)

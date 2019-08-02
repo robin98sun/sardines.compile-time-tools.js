@@ -5,7 +5,7 @@
  * @modify date 2019-06-21 14:19:26
  * @desc [description]
  */
-import * as utils from 'sardines-utils'
+import { utils } from 'sardines-core'
 import * as proc from 'process'
 import * as compiler from './index'
 
@@ -60,7 +60,7 @@ if (params['gen-services']) {
     if (typeof paramValue === 'string'){
         if(params.verbose) console.log(`going to generate service definition file at [${paramValue}]`)
     } else {
-        paramValue = `${proc.cwd()}/sardines.json`
+        paramValue = `${proc.cwd()}/sardines-local-services.json`
         if(params.verbose) console.log(`going to generate service definition file at [${paramValue}]`)
     }
     params.gen_services = paramValue
@@ -89,7 +89,7 @@ if (params['help']) {
     --recompile:        compile the source code even though it has been compiled
     --reverse:          undo the compile action
     --undo:             same as --reverse
-    --gen-services:     generate service definition file, default file path is ./sardines.json
+    --gen-services:     generate service definition file, default file path is ./sardines_local_services.json.json
     --application:      set application name while generating service definition files
     `)
 }

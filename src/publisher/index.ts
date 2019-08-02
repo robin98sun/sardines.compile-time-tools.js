@@ -1,12 +1,4 @@
-// import * as utils from 'sardines-utils'
-import * as utils from 'sardines-utils'
-import { Repository } from 'sardines-core'
-let {
-    loginRepository, signUpRepository,
-    createOrUpdateSource,
-    createOrUpdateApplication,
-    createOrUpdateService
-} = Repository.Client
+import { utils, RepositoryClient } from 'sardines-core'
 import * as fs from 'fs'
 import { GitVersioning } from '../versioning'
 import { exit } from 'process'
@@ -14,11 +6,12 @@ import * as path from 'path'
 
 
 export interface PublisherArguments {
-    url?: string
-    username: string
-    password: string
-    executableCodeDir?: string
+    // url?: string
+    // username: string
+    // password: string
+    // executableCodeDir?: string
     serviceDefinitionFile?: string
+    sardinesConfigFile?: string
     patch?: boolean
     minor?: boolean
     major?: boolean
@@ -32,13 +25,16 @@ export interface PublisherArguments {
 }
 
 export const publish = async (args: PublisherArguments) => {
-    let { url, username, password, executableCodeDir, serviceDefinitionFile,
+    let { 
+        // url, username, password, executableCodeDir, 
+        serviceDefinitionFile, sardinesConfigFile,
         patch, minor, major, version, tag, tagMsg, commit,
         remote, branch, verbose, isPublic
     } = Object.assign({
         url: 'http://localhost:8080',
         executableCodeDir: './lib',
-        serviceDefinitionFile: './sardines.json',
+        serviceDefinitionFile: './sardines-local-services.json',
+        sardinesConfigFile: './sardines-config.json',
         verbose: false,
         patch: true,
         minor: false,
@@ -74,6 +70,9 @@ export const publish = async (args: PublisherArguments) => {
         throw utils.unifyErrMesg(`Services are not found in the service definition file`)
     }
 
+    // Read the sardines-config file
+    const sardinesConfig = RepositoryClient.setupRepositoryEntriesByConfigFile(sardinesConfigFile)
+    const executableCodeDir = sardinesConfig.exeDir
     // Check the executable code dir
     if (!executableCodeDir) {
         throw utils.unifyErrMesg('Can not publish executable code without its directory path', 'sardines', 'publisher')
@@ -103,18 +102,6 @@ export const publish = async (args: PublisherArguments) => {
         exit(0)
     }
 
-    // Sign in or sign up
-    let token: any = await loginRepository(url, username, password)
-    if (token && typeof token === 'object' && token.error) {
-        token = await signUpRepository(url, username, password)
-        if (token && typeof token === 'object' && token.error){
-            throw token
-        }
-    } 
-    if (verbose) {
-        console.log('token:', token)
-    }
-
     // Update application info 
     // interface Application {
     //     id?: string
@@ -124,7 +111,7 @@ export const publish = async (args: PublisherArguments) => {
     //     developers?: string[]
     //     last_access_on?: any
     // }
-    const appInDB = await createOrUpdateApplication(url, {name: application}, token)
+    const appInDB = await RepositoryClient.createOrUpdateApplication({name: application})
     if (verbose) {
         console.log('app:', appInDB)
     }
@@ -146,7 +133,7 @@ export const publish = async (args: PublisherArguments) => {
         root: executableCodeDir,
         URL: currentVersion.git
     }
-    let sourceInDB = await createOrUpdateSource(url, source, token)
+    let sourceInDB = await RepositoryClient.createOrUpdateSource(source)
     if (verbose) {
         console.log('source:', sourceInDB)
     }
@@ -203,7 +190,7 @@ export const publish = async (args: PublisherArguments) => {
         console.log('services to upload:')
         utils.inspectedLog(serviceList)
     }
-    const res = await createOrUpdateService(url, serviceList, token)
+    const res = await RepositoryClient.createOrUpdateService(serviceList)
     if (verbose) {
         console.log('created or updated services:')
         utils.inspectedLog(res)

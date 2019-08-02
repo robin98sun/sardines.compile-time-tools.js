@@ -15,7 +15,7 @@
  */
 
 import { spawn } from 'child_process'
-import * as utils from 'sardines-utils'
+import { utils } from 'sardines-core'
 
 interface ExecResult {
     stdout: string

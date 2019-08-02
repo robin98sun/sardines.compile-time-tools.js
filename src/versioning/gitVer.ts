@@ -1,5 +1,5 @@
 import * as semver from 'semver'
-import * as utils from 'sardines-utils'
+import { utils } from 'sardines-core'
 import { exec, unifiedExec, Version } from './utils'
 
 const isGitInstalled = async (): Promise<boolean> => {
@@ -124,7 +124,8 @@ export const GitVersioning = async (params:any = {}): Promise<Version> => {
             await unifiedExec({verbose, cmd: `git commit -m "${commitMsg}"`})
         } catch (e) {
             if (e && e.error && e.error.stdout && e.error.stdout.indexOf('nothing to commit, working tree clean')) {
-                doCommit = false
+                if (verbose) console.warn(e.error.stdout)
+                // doCommit = false
             } else {
                 throw e
             }
