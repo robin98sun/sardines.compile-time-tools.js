@@ -15,8 +15,7 @@
         "typescript": "^3.4.5"
     },
     "description": "sardines.compile-time-tools.js is part of the sardines.io project",
-    "devDependencies": {
-    },
+    "devDependencies": {},
     "homepage": "https://github.com/robin-98/sardines.compile-time-tools.js#readme",
     "keywords": [
         "Free-to-Decompose",
@@ -38,12 +37,12 @@
     },
     "scripts": {
         "build": "npm run clear && tsc --build conf/tsconfig.json && npm run makeExecCompiler && npm run makeExecPublisher",
-        "prepublish": "npm run build", 
+        "prepublish": "npm run build",
         "testSuccess": "npm run prod -- example -recompile -gen-services -verbose",
         "testFail": "npm run prod -- example -recompile -gen-services -verbose -validate",
         "clear": "rm -rf lib/*",
         "makeExecCompiler": "file=lib/compiler/bin.js; { echo '#!/usr/bin/env node'; cat $file; } > ${file}.tmp && mv ${file}.tmp $file && chmod a+x $file",
-        "makeExecPublisher": "file=lib/publisher/bin.js; { echo '#!/usr/bin/env node'; cat $file; } > ${file}.tmp && mv ${file}.tmp $file && chmod a+x $file",
+        "makeExecPublisher": "file=lib/publisher/bin.js; { echo '#!/usr/bin/env node'; cat $file; } > ${file}.tmp && mv ${file}.tmp $file && chmod a+x $file"
     },
     "version": "1.0.0"
 }
