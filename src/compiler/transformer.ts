@@ -10,7 +10,7 @@ export const transform = async (appName: string, fileName: string, sardineFileNa
     await line_handler(line, line_index)
 
     line_index++
-    line = `import * as core from 'sardines-core'\n`
+    line = `import { Core } from 'sardines-core'\n`
     await line_handler(line, line_index)
 
     const sardineServices: Service[] = []

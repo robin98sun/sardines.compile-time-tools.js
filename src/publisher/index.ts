@@ -1,4 +1,5 @@
 import { utils, RepositoryClient } from 'sardines-core'
+import { readSardinesConfigFile } from '../config'
 import * as fs from 'fs'
 import { GitVersioning } from '../versioning'
 import { exit } from 'process'
@@ -71,7 +72,8 @@ export const publish = async (args: PublisherArguments) => {
     }
 
     // Read the sardines-config file
-    const sardinesConfig = RepositoryClient.setupRepositoryEntriesByConfigFile(sardinesConfigFile)
+    const sardinesConfig = readSardinesConfigFile(sardinesConfigFile)
+    RepositoryClient.setupRepositoryEntriesBySardinesConfig(sardinesConfig)
     const executableCodeDir = sardinesConfig.exeDir
     // Check the executable code dir
     if (!executableCodeDir) {

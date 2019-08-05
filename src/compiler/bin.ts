@@ -8,11 +8,26 @@
 import { utils } from 'sardines-core'
 import * as proc from 'process'
 import * as compiler from './index'
+import { Sardines } from 'sardines-core'
+import { readSardinesConfigFile } from '../config'
+
 
 // Parse the arguments
 const {params, files} = utils.parseArgs()
 
 const projectName = params['project'] ? params['project'] : ''
+
+let sardinesConfig: Sardines.Config|null = null
+try {
+    let configFilePath = './sardines-config.json'
+    if (params['config']) {
+        configFilePath = params['config']
+    }
+    sardinesConfig = readSardinesConfigFile(configFilePath)
+} catch (e) {
+    if (params['config']) console.error(`ERROR when reading config file:`, e)
+}
+
 
 if (params['verbose']) {
     console.log(`processing files belong to project: ${projectName}`)
@@ -66,14 +81,15 @@ if (params['gen-services']) {
     params.gen_services = paramValue
 }
 
-if (params['application']) {
-    let paramValue = params['application']
-    if (typeof paramValue === 'string'){
-        params.application = paramValue
-        if(params.verbose) console.log(`compiling service for application [${paramValue}]`)
-    } else {
-        console.error(`application name is missing`)
-    }
+if (typeof params['application'] === 'string'){
+    params.application = params['application']
+} else if (sardinesConfig && sardinesConfig.application) {
+    params.application = sardinesConfig.application
+} else {
+    console.error(`application name is missing`)
+}
+if (params.application && params.verbose) {
+    console.log(`compiling service for application [${params['application']}]`)
 }
 
 if (params.verbose) {
@@ -91,6 +107,7 @@ if (params['help']) {
     --undo:             same as --reverse
     --gen-services:     generate service definition file, default file path is ./sardines_local_services.json.json
     --application:      set application name while generating service definition files
+    --config:           set sardines config file path, default is: './sardines-config.json'
     `)
 }
 

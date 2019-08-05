@@ -3,16 +3,22 @@
         "email": "robin@naturewake.com",
         "name": "Robin Sun"
     },
+    "bin": {
+        "sardines-compiler": "lib/compiler/bin.js",
+        "sardines-publisher": "lib/publisher/bin.js",
+        "sardines-init": "lib/initializer/bin.js"
+    },
     "bugs": {
         "url": "https://github.com/robin-98/sardines.compile-time-tools.js/issues"
     },
     "dependencies": {
-        "@types/node": "^12.0.2",
+        "@types/node": "^12.6.9",
         "@types/npm": "^2.0.30",
         "@types/semver": "^6.0.1",
+        "npm": "^6.10.2",
         "sardines-core": "*",
-        "semver": "^6.1.2",
-        "typescript": "^3.4.5"
+        "semver": "^6.3.0",
+        "typescript": "^3.5.3"
     },
     "description": "sardines.compile-time-tools.js is part of the sardines.io project",
     "devDependencies": {},
@@ -24,25 +30,22 @@
         "FaaS"
     ],
     "license": "ISC",
-    "bin": {
-        "sardines-compiler": "lib/compiler/bin.js",
-        "sardines-publisher": "lib/publisher/bin.js"
-    },
     "main": "lib/index.js",
-    "type": "lib/index.d.js",
     "name": "sardines-compile-time-tools",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/robin-98/sardines.compile-time-tools.js.git"
     },
     "scripts": {
-        "build": "npm run clear && tsc --build conf/tsconfig.json && npm run makeExecCompiler && npm run makeExecPublisher",
-        "prepublish": "npm run build",
-        "testSuccess": "npm run prod -- example -recompile -gen-services -verbose",
-        "testFail": "npm run prod -- example -recompile -gen-services -verbose -validate",
+        "build": "npm run clear && tsc --build conf/tsconfig.json && npm run makeExecCompiler && npm run makeExecPublisher && npm run makeExecInitializer",
         "clear": "rm -rf lib/*",
         "makeExecCompiler": "file=lib/compiler/bin.js; { echo '#!/usr/bin/env node'; cat $file; } > ${file}.tmp && mv ${file}.tmp $file && chmod a+x $file",
-        "makeExecPublisher": "file=lib/publisher/bin.js; { echo '#!/usr/bin/env node'; cat $file; } > ${file}.tmp && mv ${file}.tmp $file && chmod a+x $file"
+        "makeExecPublisher": "file=lib/publisher/bin.js; { echo '#!/usr/bin/env node'; cat $file; } > ${file}.tmp && mv ${file}.tmp $file && chmod a+x $file",
+        "makeExecInitializer": "file=lib/initializer/bin.js; { echo '#!/usr/bin/env node'; cat $file; } > ${file}.tmp && mv ${file}.tmp $file && chmod a+x $file",
+        "prepublish": "npm run build",
+        "testFail": "npm run prod -- example -recompile -gen-services -verbose -validate",
+        "testSuccess": "npm run prod -- example -recompile -gen-services -verbose"
     },
-    "version": "1.0.0"
+    "type": "lib/index.d.js",
+    "version": "0.2.0"
 }
