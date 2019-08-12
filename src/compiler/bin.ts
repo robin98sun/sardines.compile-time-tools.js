@@ -85,7 +85,7 @@ if (typeof params['application'] === 'string'){
     params.application = params['application']
 } else if (sardinesConfig && sardinesConfig.application) {
     params.application = sardinesConfig.application
-} else {
+} else if (!params['reverse']) {
     console.error(`application name is missing`)
 }
 if (params.application && params.verbose) {

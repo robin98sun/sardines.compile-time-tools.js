@@ -10,8 +10,6 @@ import * as path from 'path'
 import * as fs from 'fs'
 import { Sardines } from 'sardines-core'
 
-
-
 export const readSardinesConfigFile = (sardinesConfigFile: string):Sardines.Config => {
   if (!fs.existsSync(sardinesConfigFile)) {
     throw(`Sardines configure file [${sardinesConfigFile}] does not exist`)
@@ -63,13 +61,13 @@ export const readSardinesConfigFile = (sardinesConfigFile: string):Sardines.Conf
     if (!entry.user) entry.user = 'anonymous'
   }
 
-  if (!sardinesConfig.drivers || !sardinesConfig.drivers.length) {
-    sardinesConfig.drivers = [{
-      name: 'sardines-service-driver-http',
-      locationType: Sardines.LocationType.npm,
-      protocols: ['http', 'https']
-    }]
-  }
+  // if (!sardinesConfig.drivers || !sardinesConfig.drivers.length) {
+  //   sardinesConfig.drivers = [{
+  //     name: 'sardines-service-driver-http',
+  //     locationType: Sardines.LocationType.npm,
+  //     protocols: ['http', 'https']
+  //   }]
+  // }
 
   return sardinesConfig!
 }

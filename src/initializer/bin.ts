@@ -14,6 +14,7 @@ import * as path from 'path'
 import * as fs from 'fs'
 import { queryRemoteSardines } from './queryRemoteSardines'
 import { cacheDrivers } from './cacheDrivers'
+import { setupRepo } from './setupRepo'
 
 const { params } = utils.parseArgs()
 
@@ -72,18 +73,20 @@ const writeline = (line: string, lineNumber: number = -1) => {
 
 // the main loop
 const main = async() => {
+  // cache drivers
+  const drivercache = await cacheDrivers(sardinesConfig!, writeline, sardinesDir)
+  RepositoryClient.setupDrivers(drivercache)
+  RepositoryClient.setupPlatform(sardinesConfig!.platform)
+  // query remote sardines
   await queryRemoteSardines(sardinesConfig!, writeline)
   // setup runtime environment
-  writeline(`import { RepositoryClient } from 'sardines-core'`)
-  writeline(`const sardinesConfig = ${JSON.stringify(sardinesConfig, null, 4)}`)
-  writeline(`RepositoryClient.setupRepositoryEntriesBySardinesConfig(sardinesConfig)`)
-  // cache drivers
-  await cacheDrivers(sardinesConfig!, writeline, sardinesDir)
+  await setupRepo(sardinesConfig!, writeline)
 }
 
 main().then(()=>{
   console.log(`Remote services have been loaded at ${sardinesIndexFile}`)
 }).catch((e:any) => {
+  // if(e){}
   console.error('ERROR when querying remote services:', e)
 })
 

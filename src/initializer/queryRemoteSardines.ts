@@ -5,8 +5,7 @@
  * @modify date 2019-08-02 17:57:24
  * @desc [description]
  */
-import { Sardines } from 'sardines-core'
-import { RepositoryClient } from 'sardines-core'
+import { Sardines, utils, RepositoryClient } from 'sardines-core'
 
 // Read remote sardines from repository
 export const queryRemoteSardines = async (sardinesConfig: Sardines.Config,  writeline: any) => {
@@ -36,7 +35,7 @@ export const queryRemoteSardines = async (sardinesConfig: Sardines.Config,  writ
         try {
           const serviceInfo = await RepositoryClient.queryService(serviceIdentity)
           if (!serviceInfo) {
-            console.error(`Can not find service information in the repository, service: ${RepositoryClient.genServiceIdentitySting(serviceIdentity)}`)
+            console.error(`Can not find service information in the repository, service: ${utils.genServiceIdentitySting(serviceIdentity)}`)
           } else {
             if (serviceVersion === '*' || serviceVersion === 'latest') {
               serviceInfo.version = serviceVersion
@@ -44,7 +43,8 @@ export const queryRemoteSardines = async (sardinesConfig: Sardines.Config,  writ
             cachedSubModules[serviceName] = serviceInfo
           }
         } catch (e) {
-          console.error(`ERROR when query service ${RepositoryClient.genServiceIdentitySting(serviceIdentity)}:`, e)
+          // console.error(`ERROR when query service ${utils.genServiceIdentitySting(serviceIdentity)}:`, e)
+          throw e
         }
       }
     }
