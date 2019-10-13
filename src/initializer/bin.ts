@@ -22,8 +22,9 @@ if (params.help) {
   console.log(`
   sardines [--<arg>=<value>] 
   --config=<path>           : set the sardines config file, default is ./sardines-config.json
-  --local=<path>            : Service definition file path, default is './sardines-local-services.json'
   `)
+  // --local=<path>            : Service definition file path, default is './sardines-local-services.json'
+  // `)
   // --exe-dir=<dir>           : Directory path of the executable code files, default is './lib'
   // --repo=<repo url>         : Url of repository, default is 'http://localhost:8080'
   // --user=<user name>        : User of repository, required, the user would be signed up if does not exist
@@ -51,44 +52,51 @@ try {
   proc.exit(1)
 }
 
-// Prepare local sardines code file path
-const sardinesDir = path.join(sardinesConfig!.srcRootDir!, sardinesConfig!.sardinesDir!)
-try {
-  fs.mkdirSync(sardinesDir, {recursive: true})
-} catch (e) {
-  console.error(`Can not create sardines directory [${sardinesDir}]:`, e)
+if (sardinesConfig && sardinesConfig.srcRootDir && sardinesConfig.sardinesDir) {
+  // Prepare local sardines code file path
+  const sardinesDir = path.join(sardinesConfig.srcRootDir, sardinesConfig.sardinesDir)
+  try {
+    fs.mkdirSync(sardinesDir, {recursive: true})
+  } catch (e) {
+    console.error(`Can not create sardines directory [${sardinesDir}]:`, e)
+    proc.exit(1)
+  }
+  const sardinesIndexFile = path.join(sardinesDir, 'index.ts')
+  try {
+    fs.writeFileSync(sardinesIndexFile, '', {flag: 'w'})
+  } catch (e) {
+    console.error(`Can not write sardines file at [${sardinesIndexFile}]:`, e)
+    proc.exit(1)
+  }
+
+  const writeline = (line: string, lineNumber: number = -1) => {
+    fs.writeFileSync(sardinesIndexFile, line + '\n', {flag: lineNumber === 0 ? 'w': 'a'})
+  }
+
+  // the main loop
+  const main = async() => {
+    // cache drivers
+    const drivercache = await cacheDrivers(sardinesConfig!.drivers!, writeline)
+    RepositoryClient.setupDrivers(drivercache)
+    RepositoryClient.setupPlatform(sardinesConfig!.platform)
+    // query remote sardines
+    await queryRemoteSardines(sardinesConfig!, writeline)
+    // setup runtime environment
+    await setupRepo(sardinesConfig!, writeline)
+  }
+
+  main().then(()=>{
+    console.log(`Remote services have been loaded at ${sardinesIndexFile}`)
+  }).catch((e:any) => {
+    // if(e){}
+    console.error('ERROR when querying remote services:', e)
+  })
+} else {
+  console.error(`Can not read sardines config file or its content is invalid`)
   proc.exit(1)
 }
-const sardinesIndexFile = path.join(sardinesDir, 'index.ts')
-try {
-  fs.writeFileSync(sardinesIndexFile, '', {flag: 'w'})
-} catch (e) {
-  console.error(`Can not write sardines file at [${sardinesIndexFile}]:`, e)
-  proc.exit(1)
-}
 
-const writeline = (line: string, lineNumber: number = -1) => {
-  fs.writeFileSync(sardinesIndexFile, line + '\n', {flag: lineNumber === 0 ? 'w': 'a'})
-}
 
-// the main loop
-const main = async() => {
-  // cache drivers
-  const drivercache = await cacheDrivers(sardinesConfig!, writeline, sardinesDir)
-  RepositoryClient.setupDrivers(drivercache)
-  RepositoryClient.setupPlatform(sardinesConfig!.platform)
-  // query remote sardines
-  await queryRemoteSardines(sardinesConfig!, writeline)
-  // setup runtime environment
-  await setupRepo(sardinesConfig!, writeline)
-}
-
-main().then(()=>{
-  console.log(`Remote services have been loaded at ${sardinesIndexFile}`)
-}).catch((e:any) => {
-  // if(e){}
-  console.error('ERROR when querying remote services:', e)
-})
 
 
   

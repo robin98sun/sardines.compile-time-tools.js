@@ -9,6 +9,7 @@ import { Sardines, utils, RepositoryClient } from 'sardines-core'
 
 // Read remote sardines from repository
 export const queryRemoteSardines = async (sardinesConfig: Sardines.Config,  writeline: any) => {
+  if (!sardinesConfig.remoteServices || !Object.keys(sardinesConfig.remoteServices).length) return 
   const cachedApps:any = {}
 
   for (let appName in sardinesConfig!.remoteServices) {

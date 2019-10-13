@@ -6,7 +6,8 @@
     "bin": {
         "sardines-compiler": "lib/compiler/bin.js",
         "sardines-publisher": "lib/publisher/bin.js",
-        "sardines-init": "lib/initializer/bin.js"
+        "sardines-init": "lib/initializer/bin.js",
+        "sardines-repository-client": "lib/initializer/repo_client.js"
     },
     "bugs": {
         "url": "https://github.com/robin-98/sardines.compile-time-tools.js/issues"
@@ -37,8 +38,9 @@
         "url": "git+https://github.com/robin-98/sardines.compile-time-tools.js.git"
     },
     "scripts": {
-        "build": "npm run clear && tsc --build conf/tsconfig.json && npm run makeExecCompiler && npm run makeExecPublisher && npm run makeExecInitializer",
+        "build": "npm run clear && tsc --build conf/tsconfig.json && npm run makeExecCompiler && npm run makeExecPublisher && npm run makeExecInitializer && npm run makeExecRepoClient",
         "clear": "rm -rf lib/*",
+        "makeExecRepoClient": "file=lib/initializer/repo_client.js; { echo '#!/usr/bin/env node'; cat $file; } > ${file}.tmp && mv ${file}.tmp $file && chmod a+x $file",
         "makeExecCompiler": "file=lib/compiler/bin.js; { echo '#!/usr/bin/env node'; cat $file; } > ${file}.tmp && mv ${file}.tmp $file && chmod a+x $file",
         "makeExecPublisher": "file=lib/publisher/bin.js; { echo '#!/usr/bin/env node'; cat $file; } > ${file}.tmp && mv ${file}.tmp $file && chmod a+x $file",
         "makeExecInitializer": "file=lib/initializer/bin.js; { echo '#!/usr/bin/env node'; cat $file; } > ${file}.tmp && mv ${file}.tmp $file && chmod a+x $file",
@@ -47,5 +49,5 @@
         "testSuccess": "npm run prod -- example -recompile -gen-services -verbose"
     },
     "type": "lib/index.d.js",
-    "version": "0.2.6"
+    "version": "0.2.8"
 }
