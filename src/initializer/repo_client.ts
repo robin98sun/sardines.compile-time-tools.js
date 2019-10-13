@@ -18,8 +18,8 @@ import * as fs from 'fs'
 // Process input arguments
 const { params } = utils.parseArgs()
 
-if (!params.config) {
-  console.error('--config is required: sardines config file is needed to access repository')
+if (!params.config && !params.entries && !params.drivers) {
+  console.error('--config or [--entries and --driversis] is required: sardines config file is needed to access repository')
   proc.exit(1)
 }
 
@@ -31,30 +31,42 @@ if (!params.cmd) {
 if (params.help) {
   console.log(`
     sardines-repository-client [--<argument name>[=<argument value>]]
-      --help:   print help menu
-      --config: required, sardines config file path
-      --cmd:    required, repository command name
-      --data:   path of data file which in JSON format
+      --help:    print help menu
+      --config:  sardines config file path
+      --entries: repository entries JSON string
+      --drivers: drivers settings JSON string
+      --cmd:     required, repository command name
+      --data:    path of data file which in JSON format, or data in JSON string format
   `)
 }
 
 // check arguments
-if (!fs.existsSync(params.config)) {
+if (params.config && !fs.existsSync(params.config)) {
   console.error(`sardines config file path [${params.config}] is invalid`)
   proc.exit(1)
 }
 
-if (!fs.existsSync(params.data)) {
-  console.error(`data file path [${params.data}] is invalid`)
-  proc.exit(1)
-}
-
 // Read config file
-let sardinesConfig: Sardines.Config|null = null
-try {
-  sardinesConfig = JSON.parse(fs.readFileSync(params.config).toString())
-} catch(e) {
-  console.error(`invalid config file [${params.config}]`, e)
+let sardinesConfig: any = null
+if (params.config) {
+  try {
+    sardinesConfig = JSON.parse(fs.readFileSync(params.config).toString())
+  } catch(e) {
+    console.error(`invalid config file [${params.config}]`, e)
+    proc.exit(1)
+  }
+} else if (params.entries && params.drivers) {
+  try {
+    sardinesConfig = {
+      repositoryEntries: JSON.parse(params.entries),
+      drivers: JSON.parse(params.drivers)
+    }
+  } catch (e) {
+    console.error(`invalid entries string or drivers string`, e)
+    proc.exit(1)
+  }
+} else {
+  console.error(`--entries and --drivers are both required if --config is omitted`)
   proc.exit(1)
 }
 
@@ -66,17 +78,26 @@ if (!sardinesConfig || !sardinesConfig.repositoryEntries || !sardinesConfig.driv
 // Read data file
 let data: any = null
 if (params.data) {
-  try {
-    data = JSON.parse(fs.readFileSync(params.data).toString())
-  } catch(e) {
-    console.error(`invalid data file [${params.data}]`, e)
-    proc.exit(1)
+  if (fs.existsSync(params.data)) {
+    try {
+      data = JSON.parse(fs.readFileSync(params.data).toString())
+    } catch(e) {
+      console.error(`invalid data file [${params.data}]`, e)
+      proc.exit(1)
+    }
+  } else {
+    try {
+      data = JSON.parse(params.data)
+    } catch(e) {
+      console.error(`invalid data string`, e)
+      proc.exit(1)
+    }
   }
 }
 
-const exec = async (config: Sardines.Config, cmd: string, data: any = null) => {
+const exec = async (config: any, cmd: string, data: any = null) => {
   // Setup repository client
-  const drivers = cacheDrivers(config.drivers!)
+  const drivers = await cacheDrivers(config.drivers!)
   RepositoryClient.setupDrivers(drivers)
   RepositoryClient.setupRepositoryEntries(config.repositoryEntries!)
   RepositoryClient.setupPlatform(Sardines.Platform.nodejs)
