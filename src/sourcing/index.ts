@@ -65,7 +65,11 @@ export namespace Source {
             throw `Can not access entrance file for package [${packName}] at [${mainFilePath}]`
         }
         const packageInst: any = require(mainFilePath)
-        return packageInst
+        if (packageInst && packageInst.default) return packageInst.default
+        else if (packageInst) return packageInst
+        else {
+            throw utils.unifyErrMesg(`Invalid package [${packName}]`, 'sourcing', 'npm')
+        }
     }
     
     export const getPackageFromNpm = async (packName: string, locationType: Sardines.LocationType, verbose: boolean = false ) =>  {
@@ -107,10 +111,7 @@ export namespace Source {
         }
 
         try {
-            const packageInst:any = await requirePackage(packName)
-            if (packageInst && packageInst.default) return packageInst.default
-            else if (packageInst) return packageInst
-            else return null
+            return await requirePackage(packName)
         } catch (e) {
             if (verbose) {
                 console.error(`ERROR when importing npm package [${packName}]`)
