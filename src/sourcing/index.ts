@@ -10,6 +10,7 @@ import * as npm from 'npm'
 import { Sardines } from 'sardines-core'
 import { utils } from 'sardines-core'
 import * as fs from 'fs' 
+import * as path from 'path'
 
 export namespace Source {
     let npmInst: any = null
@@ -37,6 +38,34 @@ export namespace Source {
                 cmd()
             }
         })
+    }
+
+    export const requirePackage = async (packName: string) => {
+        const packageDir = path.resolve(`node_modules/${packName}`)
+        if (!fs.existsSync(packageDir)) {
+            throw `Can not access package [${packName}] directory at [${packageDir}]`
+        }
+        const packageConfigFile = path.resolve(`${packageDir}/package.json`)
+        if (!fs.existsSync(packageConfigFile)) {
+            throw `Can not access package.json file for package [${packName}] at [${packageConfigFile}]`
+        }
+        let packageConfig: any = null
+        try {
+            packageConfig = JSON.parse(fs.readFileSync(packageConfigFile).toString())
+            if (!packageConfig) throw ''
+        } catch (e) {
+            throw `Can not parse package.json file for package [${packName}]`
+        }
+        if (packageConfig && !packageConfig.main) {
+            throw `Invalid package.json file for package [${packName}]`
+        }
+        const mainFileName = packageConfig.main
+        const mainFilePath = path.resolve(`${packageDir}/${mainFileName}`)
+        if (!fs.existsSync(mainFilePath)) {
+            throw `Can not access entrance file for package [${packName}] at [${mainFilePath}]`
+        }
+        const packageInst: any = require(mainFilePath)
+        return packageInst
     }
     
     export const getPackageFromNpm = async (packName: string, locationType: Sardines.LocationType, verbose: boolean = false ) =>  {
@@ -78,7 +107,7 @@ export namespace Source {
         }
 
         try {
-            const packageInst:any = require(packName)
+            const packageInst:any = requirePackage(packName)
             if (packageInst && packageInst.default) return packageInst.default
             else if (packageInst) return packageInst
             else return null
