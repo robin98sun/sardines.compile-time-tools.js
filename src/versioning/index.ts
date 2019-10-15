@@ -1,2 +1,2 @@
-export { GitVersioning, getVersionTag as GitVersionTag } from './gitVer'
+export { getLatestVersion, GitVersioning, getVersionTag as GitVersionTag } from './gitVer'
 export { Version, VersioningArguments } from './utils'

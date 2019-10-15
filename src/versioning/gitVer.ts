@@ -16,6 +16,31 @@ export const getVersionTag = (version: string): string => {
     return `sardines-v${version}`
 }
 
+export const getLatestVersion = async (verbose: boolean = false): Promise<string> => {
+    // get versions
+    let latestVersion = ''
+    try {
+        let res = await unifiedExec({verbose, cmd: `git tag -l sardines-v*`})
+        for (let line of res.stdout.split('\n')) {
+            if (!line) continue
+            const parts = line.split('-v')
+            if (parts.length >=2) {
+                const v = parts[1]
+                if (!latestVersion || semver.gt(v, latestVersion)) latestVersion = v
+            }
+        }
+        if (verbose) {
+            console.log('last version:', latestVersion)
+        }
+    } catch (e) {
+        if (verbose) {
+            console.error('ERROR while getting current version using git:', utils.inspect(e))
+        }
+    }
+    
+    return latestVersion
+}
+
 export const GitVersioning = async (params:any = {}): Promise<Version> => {
     let {
         remote, branch, doCommit, tag, tagMsg,
@@ -85,19 +110,10 @@ export const GitVersioning = async (params:any = {}): Promise<Version> => {
         }
     }
 
-    // get versions
-    res = await unifiedExec({verbose, cmd: `git tag -l sardines-v*`})
-    let latestVersion = '', currentVersion = ''
-    for (let line of res.stdout.split('\n')) {
-        if (!line) continue
-        const parts = line.split('-v')
-        if (parts.length >=2) {
-            const v = parts[1]
-            if (!latestVersion || semver.gt(v, latestVersion)) latestVersion = v
-        }
-    }
-
-    console.log('last version:', latestVersion)
+    // get latest version
+    const latestVersion = await getLatestVersion(verbose)
+    let currentVersion = ''
+    
     if (latestVersion && version === '0.0.1') {
         if (!semver.valid(latestVersion)) {
             throw utils.unifyErrMesg(`latest version [${latestVersion}] is not valid`, 'sardines', 'versioning')
