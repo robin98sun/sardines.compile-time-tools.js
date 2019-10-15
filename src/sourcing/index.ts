@@ -107,7 +107,7 @@ export namespace Source {
         }
 
         try {
-            const packageInst:any = requirePackage(packName)
+            const packageInst:any = await requirePackage(packName)
             if (packageInst && packageInst.default) return packageInst.default
             else if (packageInst) return packageInst
             else return null
