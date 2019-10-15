@@ -71,7 +71,7 @@ export namespace Source {
                 }
             } catch (e) {
                 if (verbose) {
-                    console.error(`ERROR when downloading provider class [${packName}]`)
+                    console.error(`ERROR when downloading npm package [${packName}]`)
                 }
                 throw utils.unifyErrMesg(`Error when downloading npm package [${packName}]: ${e}`, 'sourcing', 'npm')
             }
@@ -84,7 +84,7 @@ export namespace Source {
             else return null
         } catch (e) {
             if (verbose) {
-                console.error(`ERROR when importing provider class [${packName}]`)
+                console.error(`ERROR when importing npm package [${packName}]`)
             }
             throw utils.unifyErrMesg(`Error when importing npm package [${packName}]: ${e}`, 'sourcing', 'npm')
         }

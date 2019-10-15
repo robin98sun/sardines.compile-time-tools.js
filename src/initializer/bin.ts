@@ -22,6 +22,7 @@ if (params.help) {
   console.log(`
   sardines [--<arg>=<value>] 
   --config=<path>           : set the sardines config file, default is ./sardines-config.json
+  --bypass-remote-services  : bypass the process of querying remote services
   `)
   // --local=<path>            : Service definition file path, default is './sardines-local-services.json'
   // `)
@@ -32,10 +33,13 @@ if (params.help) {
   proc.exit(0)
 }
 
-
 let sardinesConfigFile = './sardines-config.json'
 if (params['config']) {
   sardinesConfigFile = params['config']
+}
+let bypassRemoteServices = false
+if (params['bypass-remote-services']) {
+  bypassRemoteServices = true
 }
 // let localSardinesServiceDefinitionFile = './sardines-local-services.json'
 if (params['local']) {
@@ -80,7 +84,9 @@ if (sardinesConfig && sardinesConfig.srcRootDir && sardinesConfig.sardinesDir) {
     RepositoryClient.setupDrivers(drivercache)
     RepositoryClient.setupPlatform(sardinesConfig!.platform)
     // query remote sardines
-    await queryRemoteSardines(sardinesConfig!, writeline)
+    if (!bypassRemoteServices) {
+      await queryRemoteSardines(sardinesConfig!, writeline)
+    }
     // setup runtime environment
     await setupRepo(sardinesConfig!, writeline)
   }
@@ -89,7 +95,7 @@ if (sardinesConfig && sardinesConfig.srcRootDir && sardinesConfig.sardinesDir) {
     console.log(`Remote services have been loaded at ${sardinesIndexFile}`)
   }).catch((e:any) => {
     // if(e){}
-    console.error('ERROR when querying remote services:', e)
+    console.error('ERROR when initializing sardines project:', e)
   })
 } else {
   console.error(`Can not read sardines config file or its content is invalid`)
