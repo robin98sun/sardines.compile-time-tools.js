@@ -49,5 +49,5 @@
         "testSuccess": "npm run prod -- example -recompile -gen-services -verbose"
     },
     "type": "lib/index.d.js",
-    "version": "0.2.15"
+    "version": "0.2.16"
 }
