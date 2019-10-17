@@ -73,7 +73,7 @@ export const publish = async (args: PublisherArguments) => {
 
     // Read the sardines-config file
     const sardinesConfig = readSardinesConfigFile(sardinesConfigFile)
-    RepositoryClient.setupRepositoryEntriesBySardinesConfig(sardinesConfig)
+    RepositoryClient.setupRepositoryEntriesBySardinesConfig(sardinesConfig, true)
     const executableCodeDir = sardinesConfig.exeDir
     // Check the executable code dir
     if (!executableCodeDir) {
