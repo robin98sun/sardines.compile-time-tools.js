@@ -252,6 +252,8 @@ export function gatherExports(sourceFilePath: string): [Map<string, IdentifierSy
                             if (item.kind === ts.SyntaxKind.FunctionExpression || item.kind === ts.SyntaxKind.ArrowFunction) {
                                 parseParamsIntoSyntax(item, itemSyntax)
                             }
+                            // some variables do not have handler, but could be stored as syntax
+                            // console.log('b tmp syntax:', itemSyntax)
                             storeSyntax(itemSyntax)
                         }
                         isValueSyntax = false
@@ -272,11 +274,16 @@ export function gatherExports(sourceFilePath: string): [Map<string, IdentifierSy
     const iterator = idnetifiers.keys()
     let item = iterator.next()
     while (!item.done) {
-        if (!(idnetifiers.get(item.value) as IdentifierSyntax).isExport) {
+        const idenObj = <IdentifierSyntax>(idnetifiers.get(item.value))
+        if (!idenObj.isExport 
+            || [
+                ts.SyntaxKind.FunctionExpression, 
+                ts.SyntaxKind.ArrowFunction,
+                ts.SyntaxKind.InterfaceDeclaration,
+            ].indexOf(idenObj.type)<0) {
             idnetifiers.delete(item.value)
         }
         item = iterator.next()
     }
-
     return [idnetifiers, referencedTypes, importedIds, proxyIds]
 }
