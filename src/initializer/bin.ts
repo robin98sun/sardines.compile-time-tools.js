@@ -23,8 +23,8 @@ if (params.help) {
   sardines [--<arg>=<value>] 
   --config=<path>           : set the sardines config file, default is ./sardines-config.json
   --bypass-remote-services  : bypass the process of querying remote services
+  --local=<path>            : Service definition file path, default is './sardines-local-services.json'
   `)
-  // --local=<path>            : Service definition file path, default is './sardines-local-services.json'
   // `)
   // --exe-dir=<dir>           : Directory path of the executable code files, default is './lib'
   // --repo=<repo url>         : Url of repository, default is 'http://localhost:8080'
@@ -41,9 +41,9 @@ let bypassRemoteServices = false
 if (params['bypass-remote-services']) {
   bypassRemoteServices = true
 }
-// let localSardinesServiceDefinitionFile = './sardines-local-services.json'
+let localSardinesServiceDefinitionFile = './sardines-local-services.json'
 if (params['local']) {
-  // localSardinesServiceDefinitionFile = params['local']
+  localSardinesServiceDefinitionFile = params['local']
 }
 
 let sardinesConfig: Sardines.Config|null = null
@@ -89,6 +89,31 @@ if (sardinesConfig && sardinesConfig.srcRootDir && sardinesConfig.sardinesDir) {
     }
     // setup runtime environment
     await setupRepo(sardinesConfig!, writeline)
+    // cache local services
+    if (fs.existsSync(localSardinesServiceDefinitionFile)) {
+      try {
+        const localServiceDescObj: Sardines.ServiceDescriptionFile = JSON.parse(fs.readFileSync(localSardinesServiceDefinitionFile).toString())
+        if (localServiceDescObj.application) {
+          writeline(`const localServices: any = {`)
+          writeline(`    "${localServiceDescObj.application}": {`)
+          if (localServiceDescObj.services && localServiceDescObj.services.length) {
+            const moduleCache: {[moduleName: string]: {[serviceName: string]: string}} = {}
+            for (let service of localServiceDescObj.services) {
+              if (!moduleCache[service.module]) moduleCache[service.module] = {}
+              moduleCache[service.module][service.name] = '*'
+            }
+            for (let moduleName in moduleCache) {
+              writeline(`        "${moduleName}": ${JSON.stringify(moduleCache[moduleName],null,4)},`)
+            }
+          }
+          writeline(`    }`)
+          writeline(`}`)
+          writeline(`RepositoryClient.setLocalServices(localServices)`)
+        }
+      } catch(e) {
+        console.error(`Can not read local service description file [${localSardinesServiceDefinitionFile}]`, e)
+      }
+    }
   }
 
   main().then(()=>{

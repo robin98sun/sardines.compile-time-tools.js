@@ -61,13 +61,9 @@ export const queryRemoteSardines = async (sardinesConfig: Sardines.Config,  writ
         writeline(`${'  '.repeat(level+1)}  },`)
       } else if (typeof node.version !== 'undefined') {
         const getArgs = (full:boolean) => {
-          return node.arguments.map((item: string)=> {
-                  const parts = item.split(',')
-                  let type = parts[1]
-                  let name = parts[0]
-                  if (['number', 'string', 'boolean'].indexOf(type) < 0) type = 'any'
-                  if (full) return `${name}: ${type}`
-                  return name
+          return node.arguments.map((item: {name: string, type: string})=> {
+                  if (full) return `${item.name}: ${item.type}`
+                  return item.name
           }).join(', ')
         }
         writeline(`${'  '.repeat(level)}  ${name}: async (${getArgs(true)}) => {`)
