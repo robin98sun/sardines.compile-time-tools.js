@@ -11,8 +11,10 @@ import { Sardines } from 'sardines-core'
 import { utils } from 'sardines-core'
 import * as fs from 'fs' 
 import * as path from 'path'
+import * as git from 'simple-git/promise'
 
 export namespace Source {
+    // Npm
     let npmInst: any = null
     export const npmCmd = (command: string, args: string[]) => {
         return new Promise((resolve, reject) => {
@@ -118,5 +120,57 @@ export namespace Source {
             }
             throw utils.unifyErrMesg(`Error when importing npm package [${packName}]: ${e}`, 'sourcing', 'npm')
         }
+    }
+
+    // Git
+    export const getSourceFromGit = async(gitUrl:string, baseDir:string, options: { branch?: string, tag?: string, version?: string, initWorkDir?: boolean} = {}): Promise<string> => {
+        if (!gitUrl) {
+            throw utils.unifyErrMesg(`Empty git url`, 'sourcing', 'git')
+        }
+        let workRoot = baseDir ? baseDir : './'
+        // parse git repository name from git url
+        let urlParts = gitUrl.split('/')
+        let repoName = ''
+        if (urlParts.length > 1) {
+            repoName = urlParts[urlParts.length-1]
+            let repoNameParts = repoName.split('.')
+            if (repoNameParts.length > 1 && repoNameParts[repoNameParts.length-1].toLowerCase() === 'git') {
+                repoNameParts.pop()
+                repoName = repoNameParts.join('.')
+            } else {
+                repoName = null
+            }
+        }
+        if (!repoName) {
+            throw utils.unifyErrMesg(`Invalid git url: can not parse repository name`, 'sourcing', 'git')
+        }
+        // prepare work dir
+        const workDir = path.resolve(`${baseDir}/`, `./${repoName}`)
+        if (fs.existsSync(workDir)) {
+            if (options && options.initWorkDir) {
+                fs.rmdirSync(workDir, {recursive: true})
+            } else {
+                throw utils.unifyErrMesg(`target directory already exists: [${workDir}]`, 'sourcing', 'git')
+            }
+        }
+        if (!fs.existsSync(baseDir)) {
+            fs.mkdirSync(baseDir, {recursive: true})
+        }
+
+        // clone repository
+        try {
+            await git(baseDir).clone(gitUrl)
+            if (!fs.existsSync(workDir)) {
+                throw `git repository did not cloned to desired directory [${workDir}]`
+            }
+            let checkoutStr = ''
+            if (options && options.branch) checkoutStr = options.branch
+            if (options && options.tag) checkoutStr = options.tag
+            if (options && options.version) checkoutStr = `sardines-v${options.version}`
+            await git(workDir).checkout(checkoutStr)
+        } catch (e) {
+            throw utils.unifyErrMesg(e, 'sourcing', 'git')
+        }
+        return workDir
     }
 }

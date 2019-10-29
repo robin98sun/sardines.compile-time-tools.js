@@ -182,7 +182,7 @@ export const GitVersioning = async (params:any = {}): Promise<Version> => {
 
         await unifiedExec({verbose, cmd: `git merge ${currentBranch}`})
         // Push
-        await unifiedExec({verbose, cmd: `git push ${remote} ${branch}`})
+        await unifiedExec({verbose, cmd: `git push ${remote} ${branch} --tags`})
     }
 
     // return to current working branch

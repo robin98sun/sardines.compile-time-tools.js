@@ -19,6 +19,7 @@
         "npm": "^6.10.2",
         "sardines-core": "*",
         "semver": "^6.3.0",
+        "simple-git": "^1.126.0",
         "typescript": "^3.5.3"
     },
     "description": "sardines.compile-time-tools.js is part of the sardines.io project",
