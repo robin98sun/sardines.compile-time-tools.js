@@ -55,10 +55,6 @@ export const publish = async (args: PublisherArguments) => {
     let serviceDefinitions:any = null
     try {
         serviceDefinitions = JSON.parse(fs.readFileSync(serviceDefinitionFile).toString())
-        console.log('==================')
-        console.log('service definition file:', serviceDefinitionFile)
-        utils.inspectedLog(serviceDefinitions)
-        console.log('==================')
     } catch (e) {
         throw utils.unifyErrMesg(`ERROR when trying to read service definition file [${serviceDefinitionFile}]`, 'sardines', 'publisher')
     }
@@ -185,7 +181,8 @@ export const publish = async (args: PublisherArguments) => {
                 is_public: isPublic,
                 file_path: (realExtName === extname) 
                             ? serv.filepath 
-                            : path.basename(serv.filepath, extname) + realExtName
+                            : p
+                            // : path.basename(serv.filepath, extname) + realExtName
             }
         } else {
             throw utils.unifyErrMesg(`Code file does not exist at [${p}] for service [${application}:${serv.module}/${serv.name}:${currentVersion.version}]`, 'sardines', 'publisher')
