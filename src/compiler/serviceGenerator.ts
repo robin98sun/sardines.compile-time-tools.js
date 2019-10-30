@@ -11,7 +11,8 @@ export const ${item.name} = ${item.isAsync? 'async' : ''} (${item.param?item.par
         ${item.isAsync? '    ' : '        '}    module: '${serviceInfo.module}',
         ${item.isAsync? '    ' : '        '}    name: '${serviceInfo.name}',
         ${item.isAsync? '    ' : '        '}    version: '*'
-        ${item.isAsync? '    ' : '        '}}
+        ${item.isAsync? '    ' : '        '}},
+        ${item.isAsync? '    ' : '        '}entries: []
         ${item.isAsync? '' : '    '}}` + 
         `${item.param && item.param.length > 0 ? ', ' : ''}` +
         `${item.param?item.param.map(x => x.name).join(', '):''})` +

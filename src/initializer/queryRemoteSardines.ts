@@ -73,7 +73,8 @@ export const queryRemoteSardines = async (sardinesConfig: Sardines.Config,  writ
         writeline(`${'  '.repeat(level+1)}                   module: '${node.module}',`)
         writeline(`${'  '.repeat(level+1)}                   name: '${node.name}',`)
         writeline(`${'  '.repeat(level+1)}                   version: '${node.version}',`)
-        writeline(`${'  '.repeat(level)}                   }`)
+        writeline(`${'  '.repeat(level)}                   },`)
+        writeline(`${'  '.repeat(level)}                   entries: []`)
         writeline(`${'  '.repeat(level)}                 }, ${getArgs(false)})`)
         writeline(`${'  '.repeat(level)}  },`)
       }
