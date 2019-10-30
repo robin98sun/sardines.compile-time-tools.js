@@ -6,7 +6,7 @@ export const genProxyCode = (appName: string, item: IdentifierSyntax, serviceInf
 export const ${item.name} = ${item.isAsync? 'async' : ''} (${item.param?item.param.map(x => x.text).join(', '):''}) => {
     if (Core.isRemote('${appName}', '${serviceInfo.module}', '${serviceInfo.name}')) {
         ${item.isAsync? 'return await' : 'return new Promise((resolve, reject) => {\n           '} Core.invoke({
-        ${item.isAsync? '' : '    '}    identity: {',
+        ${item.isAsync? '' : '    '}    identity: {
         ${item.isAsync? '    ' : '        '}    application: '${appName}',
         ${item.isAsync? '    ' : '        '}    module: '${serviceInfo.module}',
         ${item.isAsync? '    ' : '        '}    name: '${serviceInfo.name}',
