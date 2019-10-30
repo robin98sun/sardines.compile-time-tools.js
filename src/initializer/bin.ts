@@ -23,9 +23,8 @@ if (params.help) {
   sardines [--<arg>=<value>] 
   --config=<path>           : set the sardines config file, default is ./sardines-config.json
   --bypass-remote-services  : bypass the process of querying remote services
-  --local=<path>            : Service definition file path, default is './sardines-local-services.json'
   `)
-  // `)
+  // --local=<path>            : Service definition file path, default is './sardines-local-services.json'
   // --exe-dir=<dir>           : Directory path of the executable code files, default is './lib'
   // --repo=<repo url>         : Url of repository, default is 'http://localhost:8080'
   // --user=<user name>        : User of repository, required, the user would be signed up if does not exist
@@ -41,10 +40,10 @@ let bypassRemoteServices = false
 if (params['bypass-remote-services']) {
   bypassRemoteServices = true
 }
-let localSardinesServiceDefinitionFile = './sardines-local-services.json'
-if (params['local']) {
-  localSardinesServiceDefinitionFile = params['local']
-}
+// let localSardinesServiceDefinitionFile = './sardines-local-services.json'
+// if (params['local']) {
+//   localSardinesServiceDefinitionFile = params['local']
+// }
 
 let sardinesConfig: Sardines.Config|null = null
 
