@@ -138,14 +138,14 @@ export namespace Source {
                 repoNameParts.pop()
                 repoName = repoNameParts.join('.')
             } else {
-                repoName = null
+                repoName = ''
             }
         }
         if (!repoName) {
             throw utils.unifyErrMesg(`Invalid git url: can not parse repository name`, 'sourcing', 'git')
         }
         // prepare work dir
-        const workDir = path.resolve(`${baseDir}/`, `./${repoName}`)
+        const workDir = path.resolve(`${workRoot}/`, `./${repoName}`)
         if (fs.existsSync(workDir)) {
             if (options && options.initWorkDir) {
                 fs.rmdirSync(workDir, {recursive: true})
@@ -153,20 +153,21 @@ export namespace Source {
                 throw utils.unifyErrMesg(`target directory already exists: [${workDir}]`, 'sourcing', 'git')
             }
         }
-        if (!fs.existsSync(baseDir)) {
-            fs.mkdirSync(baseDir, {recursive: true})
+        if (!fs.existsSync(workRoot)) {
+            fs.mkdirSync(workRoot, {recursive: true})
         }
 
         // clone repository
         try {
-            await git(baseDir).clone(gitUrl)
+            await git(workRoot).clone(gitUrl)
             if (!fs.existsSync(workDir)) {
                 throw `git repository did not cloned to desired directory [${workDir}]`
             }
             let checkoutStr = ''
-            if (options && options.branch) checkoutStr = options.branch
-            if (options && options.tag) checkoutStr = options.tag
             if (options && options.version) checkoutStr = `sardines-v${options.version}`
+            else if (options && options.branch) checkoutStr = options.branch
+            else if (options && options.tag) checkoutStr = options.tag
+            checkoutStr = 'master'
             await git(workDir).checkout(checkoutStr)
         } catch (e) {
             throw utils.unifyErrMesg(e, 'sourcing', 'git')

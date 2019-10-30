@@ -187,6 +187,11 @@ export const publish = async (args: PublisherArguments) => {
             throw utils.unifyErrMesg(`Code file does not exist at [${p}] for service [${application}:${serv.module}/${serv.name}:${currentVersion.version}]`, 'sardines', 'publisher')
         }
     })
+    console.log('=====================')
+    utils.inspectedLog(services)
+    console.log('=====================')
+    utils.inspectedLog(serviceList)
+    console.log('=====================')
 
     if (verbose) {
         console.log('services to upload:')
