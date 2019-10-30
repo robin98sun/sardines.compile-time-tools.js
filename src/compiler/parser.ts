@@ -278,6 +278,7 @@ export function gatherExports(sourceFilePath: string): [Map<string, IdentifierSy
         if (!idenObj.isExport 
             || [
                 ts.SyntaxKind.FunctionExpression, 
+                ts.SyntaxKind.FunctionDeclaration,
                 ts.SyntaxKind.ArrowFunction,
                 ts.SyntaxKind.InterfaceDeclaration,
             ].indexOf(idenObj.type)<0) {
