@@ -114,6 +114,16 @@ export const compile = async (compilerSettings: any, targetFiles: string[]) => {
             // Parse a file
             const [identifiers, referencedTypes, importedIds, proxyIds] = gatherExports(sourceFilePath);
             const appName = compilerSettings.application
+            // console.log('parsed application:', appName)
+            // let utils = require('sardines-core').utils
+            // console.log('identifiers:')
+            // utils.inspectedLog(identifiers)
+            // console.log('referencedTypes:')
+            // utils.inspectedLog(referencedTypes)
+            // console.log('importedIds:')
+            // utils.inspectedLog(importedIds)
+            // console.log('proxyIds:')
+            // utils.inspectedLog(proxyIds)
             services = await transform(appName, fileName, sardineFileName, sourceFilePath, identifiers, referencedTypes, importedIds, proxyIds, (line:string, lineIndex:number) => {
                 if (lineIndex === 0) {
                     if (!compilerSettings.only_validate) {

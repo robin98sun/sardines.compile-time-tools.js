@@ -15,6 +15,19 @@ export interface IdentifierSyntax {
     returnType?: string
 }
 
+export const legalExportTypes = [
+    ts.SyntaxKind.FunctionExpression, 
+    ts.SyntaxKind.FunctionDeclaration,
+    ts.SyntaxKind.ArrowFunction,
+    ts.SyntaxKind.InterfaceDeclaration,
+    ts.SyntaxKind.ObjectLiteralExpression,
+    ts.SyntaxKind.ArrayLiteralExpression,
+]
+
+export const illegalExportTypes = [
+    ts.SyntaxKind.ClassDeclaration,
+]
+
 export function gatherExports(sourceFilePath: string): [Map<string, IdentifierSyntax>, string[], string[], string[]] {
     const sourceFile = ts.createSourceFile(
         sourceFilePath,
@@ -27,12 +40,13 @@ export function gatherExports(sourceFilePath: string): [Map<string, IdentifierSy
     const importedIds: string[] = []
     const proxyIds: string[] = []
 
+    
     const storeSyntax = (syntax: IdentifierSyntax) => {
         if (syntax.name) {
             if (idnetifiers.has(syntax.name)) {
                 throw `duplicated identifier: ${syntax.name}`
-            } else  if (syntax.isExport && [ts.SyntaxKind.ClassDeclaration, ts.SyntaxKind.ObjectLiteralExpression, ts.SyntaxKind.ArrayLiteralExpression].indexOf(syntax.type) >= 0) {
-                throw `illegal export type: ${ts.SyntaxKind[syntax.type]}`
+            } else  if (syntax.isExport && illegalExportTypes.indexOf(syntax.type) >= 0) {
+                throw `illegal export type: ${ts.SyntaxKind[syntax.type]} for syntax [${syntax.name}]`
             } else {
                 idnetifiers.set(syntax.name, syntax!)
             }
@@ -276,12 +290,7 @@ export function gatherExports(sourceFilePath: string): [Map<string, IdentifierSy
     while (!item.done) {
         const idenObj = <IdentifierSyntax>(idnetifiers.get(item.value))
         if (!idenObj.isExport 
-            || [
-                ts.SyntaxKind.FunctionExpression, 
-                ts.SyntaxKind.FunctionDeclaration,
-                ts.SyntaxKind.ArrowFunction,
-                ts.SyntaxKind.InterfaceDeclaration,
-            ].indexOf(idenObj.type)<0) {
+            || legalExportTypes.indexOf(idenObj.type)<0) {
             idnetifiers.delete(item.value)
         }
         item = iterator.next()

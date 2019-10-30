@@ -66,10 +66,17 @@ export const transform = async (appName: string, fileName: string, sardineFileNa
 
     const iterator = identifiers.keys()
     let key = iterator.next()
+    const directlyExportTypes = [
+        ts.SyntaxKind.InterfaceDeclaration,
+        ts.SyntaxKind.ObjectLiteralExpression,
+        ts.SyntaxKind.ArrayLiteralExpression
+    ]
     while (!key.done) {
         const item: IdentifierSyntax = identifiers.get(key.value)!
-        if (item.type === ts.SyntaxKind.InterfaceDeclaration) {
+        if (directlyExportTypes.indexOf(item.type) >=0) {
             line = `export { ${item.name} } from './${sardineFileName}'\n`
+        // } else if (item.type === ts.SyntaxKind.ObjectLiteralExpression || item.type === ts.SyntaxKind.ArrayLiteralExpression) {
+        //     line = `export { ${item.name} } from './${sardineFileName}'\n`
         } else {
             // This is a service
             const serviceInfo = genService(item, fileName, sourceFilePath)
