@@ -68,10 +68,12 @@ export const queryRemoteSardines = async (sardinesConfig: Sardines.Config,  writ
         }
         writeline(`${'  '.repeat(level)}  ${name}: async (${getArgs(true)}) => {`)
         writeline(`${'  '.repeat(level)}    return await Core.invoke({`)
-        writeline(`${'  '.repeat(level)}                   application: '${node.application}',`)
-        writeline(`${'  '.repeat(level)}                   module: '${node.module}',`)
-        writeline(`${'  '.repeat(level)}                   name: '${node.name}',`)
-        writeline(`${'  '.repeat(level)}                   version: '${node.version}',`)
+        writeline(`${'  '.repeat(level)}                   identity: {`)
+        writeline(`${'  '.repeat(level+1)}                   application: '${node.application}',`)
+        writeline(`${'  '.repeat(level+1)}                   module: '${node.module}',`)
+        writeline(`${'  '.repeat(level+1)}                   name: '${node.name}',`)
+        writeline(`${'  '.repeat(level+1)}                   version: '${node.version}',`)
+        writeline(`${'  '.repeat(level)}                   }`)
         writeline(`${'  '.repeat(level)}                 }, ${getArgs(false)})`)
         writeline(`${'  '.repeat(level)}  },`)
       }
