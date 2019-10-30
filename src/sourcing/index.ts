@@ -167,7 +167,7 @@ export namespace Source {
             if (options && options.version) checkoutStr = `sardines-v${options.version}`
             else if (options && options.branch) checkoutStr = options.branch
             else if (options && options.tag) checkoutStr = options.tag
-            checkoutStr = 'master'
+            if (!checkoutStr) checkoutStr = 'master'
             await git(workDir).checkout(checkoutStr)
         } catch (e) {
             throw utils.unifyErrMesg(e, 'sourcing', 'git')
