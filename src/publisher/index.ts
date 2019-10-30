@@ -55,6 +55,10 @@ export const publish = async (args: PublisherArguments) => {
     let serviceDefinitions:any = null
     try {
         serviceDefinitions = JSON.parse(fs.readFileSync(serviceDefinitionFile).toString())
+        console.log('==================')
+        console.log('service definition file:', serviceDefinitionFile)
+        utils.inspectedLog(serviceDefinitions)
+        console.log('==================')
     } catch (e) {
         throw utils.unifyErrMesg(`ERROR when trying to read service definition file [${serviceDefinitionFile}]`, 'sardines', 'publisher')
     }
