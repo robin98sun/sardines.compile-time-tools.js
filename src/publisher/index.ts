@@ -163,10 +163,9 @@ export const publish = async (args: PublisherArguments) => {
     const serviceList = services.map((serv: any) => {
         let p = path.resolve(executableCodeDir, './' + serv.filepath)
         let extname = path.extname(p)
-        let realExtName = extname
         if (extname === '.ts' && !fs.existsSync(p)) {
             p = path.resolve(path.dirname(p), './' + path.basename(p, extname) + '.js')
-            realExtName = '.js'
+            serv.filepath = path.resolve(path.dirname(serv.filepath), './' + path.basename(serv.filepath, extname) + '.js')
         }
         if (fs.existsSync(p) && fs.lstatSync(p).isFile()) {
             return {
@@ -179,10 +178,7 @@ export const publish = async (args: PublisherArguments) => {
                 version: currentVersion.version,
                 source_id: sourceInDB.id,
                 is_public: isPublic,
-                file_path: (realExtName === extname) 
-                            ? serv.filepath 
-                            : p
-                            // : path.basename(serv.filepath, extname) + realExtName
+                file_path: serv.filepath
             }
         } else {
             throw utils.unifyErrMesg(`Code file does not exist at [${p}] for service [${application}:${serv.module}/${serv.name}:${currentVersion.version}]`, 'sardines', 'publisher')
