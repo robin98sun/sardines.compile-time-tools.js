@@ -52,8 +52,7 @@ export const cacheDrivers = async (drivers: Sardines.DriverSettings[], sardinesD
   //     driverDir = path.join(sardinesDir, './drivers')
   //     fs.mkdirSync(driverDir, {recursive: true})
   // }
-
-  writeline(`export const drivers: {[key:string]:any} = {`)
+  const validDrivers:{[key:string]:any} = {}
   if (drivers && drivers.length) {
     for (let driver of drivers) {
       if (driver.locationType === Sardines.LocationType.npm_link || driver.locationType === Sardines.LocationType.npm) {
@@ -61,17 +60,55 @@ export const cacheDrivers = async (drivers: Sardines.DriverSettings[], sardinesD
         driverClass = utils.getDefaultClassFromPackage(driverClass)
         if (driverClass && typeof driverClass === 'function') {
           driverCache[driver.name] = driverClass
-          if (sardinesDir) {
-            // const driverFilepath = path.join(driverDir, `./${driver.name}.js`)
-            // dumpClass('f', driverClass, driverFilepath)
-            // writeline(`  "${driver.name}": require('./drivers/${driver.name}.js').f,`)
-            writeline(`  "${driver.name}": require('${driver.name}'),`)
-          }
         }
       }
     }
   }
-  writeline('}')
+
+  writeline(`import { utils } from 'sardines-core'`)
+  if (sardinesDir && Object.keys(driverCache).length > 0) {
+    const driverVarNames: {[key:string]:string} = {}
+    const driverNameList = Object.keys(driverCache)
+    for (let i = 0; i<driverNameList.length; i++) {
+      const driverName = driverNameList[i]
+      const driverVar = `driver_${i}`
+      driverVarNames[driverName] = driverVar
+      writeline(`import * as ${driverVar} from '${driverName}'`)
+    }
+
+    writeline(`
+const getClassFromPackage = (packageName) => {
+    let pkgcls = require(packageName)
+    pkgcls = utils.getDefaultClassFromPackage(pkgcls)
+    if (!pkgcls) {
+        switch (packageName) {
+`)
+    for (let driverName in driverVarNames) {
+      writeline(`
+            case '${driverName}':
+                pkgcls = utils.getDefaultClassFromPackage(${driverVarNames[driverName]})
+                break
+
+ `)
+    }
+    writeline(`
+        }
+    }
+    return pkgcls
+}
+`)
+
+    writeline(`export const drivers: {[key:string]:any} = {`)
+    for (let driverName in driverCache) {
+      // const driverFilepath = path.join(driverDir, `./${driver.name}.js`)
+      // const driverClass = driverCache[driverName]
+      // dumpClass('f', driverClass, driverFilepath)
+      // writeline(`  "${driver.name}": require('./drivers/${driver.name}.js').f,`)
+
+      writeline(`  "${driverName}": getClassFromPackage('${driverName}'),`)
+    }
+    writeline('}') 
+  }
   
   return driverCache
 }
