@@ -18,7 +18,13 @@ export const dumpClass = (className: string, packClass: any, filepath: string) =
   }
 
   let lineNumber = 0
-  const writeline = (line: string) => {
+  const writeline = (obj: any) => {
+    let line: string = ''
+    if (['string'].indexOf(typeof obj) >= 0) {
+      line = `'$${obj}'`
+    } else {
+      line = line.toString()
+    }
     if (lineNumber === 0) {
       fs.writeFileSync(filepath, line + '\n\n')
     } else {
@@ -59,7 +65,6 @@ export const cacheDrivers = async (drivers: Sardines.DriverSettings[], sardinesD
             dumpClass('f', driverClass, driverFilepath)
             writeline(`  "${driver.name}": require('./drivers/${driver.name}.js').f,`)
           }
-
         }
       }
     }
