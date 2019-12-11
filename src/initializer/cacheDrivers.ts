@@ -7,7 +7,7 @@
  */
 
 
-import { Sardines } from 'sardines-core'
+import { Sardines, utils } from 'sardines-core'
 import { Source } from '../sourcing'
 
 export const cacheDrivers = async (drivers: Sardines.DriverSettings[], writelineFunc: any = null ) => {
@@ -18,7 +18,8 @@ export const cacheDrivers = async (drivers: Sardines.DriverSettings[], writeline
   if (drivers && drivers.length) {
     for (let driver of drivers) {
       if (driver.locationType === Sardines.LocationType.npm_link || driver.locationType === Sardines.LocationType.npm) {
-        const driverClass = await Source.getPackageFromNpm(driver.name, driver.locationType)
+        let driverClass = await Source.getPackageFromNpm(driver.name, driver.locationType)
+        driverClass = utils.getDefaultClassFromPackage(driverClass)
         if (driverClass && typeof driverClass === 'function') {
           driverCache[driver.name] = driverClass
           writeline(`  "${driver.name}": require('${driver.name}'),`)
