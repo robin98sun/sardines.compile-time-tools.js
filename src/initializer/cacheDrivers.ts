@@ -52,7 +52,6 @@ export const cacheDrivers = async (drivers: Sardines.DriverSettings[], sardinesD
   //     driverDir = path.join(sardinesDir, './drivers')
   //     fs.mkdirSync(driverDir, {recursive: true})
   // }
-  const validDrivers:{[key:string]:any} = {}
   if (drivers && drivers.length) {
     for (let driver of drivers) {
       if (driver.locationType === Sardines.LocationType.npm_link || driver.locationType === Sardines.LocationType.npm) {
