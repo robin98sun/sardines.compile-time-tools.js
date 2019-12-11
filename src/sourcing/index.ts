@@ -67,8 +67,7 @@ export namespace Source {
             throw `Can not access entrance file for package [${packName}] at [${mainFilePath}]`
         }
         const packageInst: any = require(mainFilePath)
-        if (packageInst && packageInst.default) return packageInst.default
-        else if (packageInst) return packageInst
+        if (packageInst) return packageInst
         else {
             throw utils.unifyErrMesg(`Invalid package [${packName}]`, 'sourcing', 'npm')
         }
