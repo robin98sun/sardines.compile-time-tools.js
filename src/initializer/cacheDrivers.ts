@@ -18,13 +18,14 @@ export const dumpClass = (className: string, packClass: any, filepath: string) =
   }
 
   let lineNumber = 0
-  const writeline = (obj: any) => {
+  const writeobj = (obj: any, head: string = '', tail: string = '') => {
     let line: string = ''
-    if (['string'].indexOf(typeof obj) >= 0) {
-      line = `'$${obj}'`
+    if (typeof obj === 'string') {
+      line = `'${obj}'`
     } else {
       line = obj.toString()
     }
+    line = head + line + tail
     if (lineNumber === 0) {
       fs.writeFileSync(filepath, line + '\n\n')
     } else {
@@ -33,12 +34,12 @@ export const dumpClass = (className: string, packClass: any, filepath: string) =
     lineNumber++
   }
 
-  writeline(`export const ${className} = ` + packClass.toString())
+  writeobj(packClass, `export const ${className} = `)
   for (let staticMethod in packClass) {
-    writeline(`${className}.${staticMethod} = ` + packClass[staticMethod])
+    writeobj(packClass[staticMethod], `${className}.${staticMethod} = `)
   }
   for (let instMethod in packClass.prototype) {
-    writeline(`${className}.prototype.${instMethod} = ` + packClass.prototype[instMethod])
+    writeobj(packClass.prototype[instMethod], `${className}.prototype.${instMethod} = `)
   }
 }
 
