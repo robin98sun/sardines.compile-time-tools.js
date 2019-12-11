@@ -79,9 +79,17 @@ if (sardinesConfig && sardinesConfig.srcRootDir && sardinesConfig.sardinesDir) {
   // the main loop
   const main = async() => {
     // cache drivers
-    const drivercache = await cacheDrivers(sardinesConfig!.drivers!, writeline)
-    RepositoryClient.setupDrivers(drivercache)
-    RepositoryClient.setupPlatform(sardinesConfig!.platform)
+    // prepare directory for drivers
+    try {
+      const driverDir = path.join(sardinesDir, './driver')
+      fs.mkdirSync(driverDir, {recursive: true})
+      const drivercache = await cacheDrivers(sardinesConfig!.drivers!, driverDir , writeline)
+      RepositoryClient.setupDrivers(drivercache)
+      RepositoryClient.setupPlatform(sardinesConfig!.platform)
+    } catch (e) {
+      console.error(`Can not create sardines directory [${sardinesDir}]:`, e)
+      proc.exit(1)
+    }
     // query remote sardines
     if (!bypassRemoteServices) {
       await queryRemoteSardines(sardinesConfig!, writeline)
