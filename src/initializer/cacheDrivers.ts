@@ -64,31 +64,32 @@ export const cacheDrivers = async (drivers: Sardines.DriverSettings[], sardinesD
     }
   }
 
-  writeline(`import { utils } from 'sardines-core'`)
   if (sardinesDir && Object.keys(driverCache).length > 0) {
-    const driverVarNames: {[key:string]:string} = {}
+    writeline(`import { utils } from 'sardines-core'`)
+    const driverVarNames: {[key:string]:number} = {}
     const driverNameList = Object.keys(driverCache)
     for (let i = 0; i<driverNameList.length; i++) {
       const driverName = driverNameList[i]
-      const driverVar = `driver_${i}`
-      driverVarNames[driverName] = driverVar
-      writeline(`import * as ${driverVar} from '${driverName}'`)
+      driverVarNames[driverName] = i
+      writeline(`import * as driver_${i} from '${driverName}'`)
+      writeline(`import driver_default_${i} from '${driverName}'`)
     }
 
     writeline(`
 const getClassFromPackage = (packageName: string) => {
     let pkgcls = require(packageName)
-    pkgcls = utils.getDefaultClassFromPackage(pkgcls)
-    if (!pkgcls) {
-        switch (packageName) {
+    pkgcls = null
+    switch (packageName) {
 `)
     for (let driverName in driverVarNames) {
-      writeline(`            case '${driverName}':
-                pkgcls = utils.getDefaultClassFromPackage(${driverVarNames[driverName]})
-                break`)
+      writeline(`        case '${driverName}':
+            pkgcls = utils.getDefaultClassFromPackage(driver_default_${driverVarNames[driverName]})
+            if (!pkgcls) {
+                pkgcls = utils.getDefaultClassFromPackage(driver_${driverVarNames[driverName]})
+            }
+            break`)
     }
     writeline(`
-        }
     }
     return pkgcls
 }
