@@ -36,10 +36,16 @@ export const dumpClass = (className: string, packClass: any, filepath: string) =
   }
 }
 
-export const cacheDrivers = async (drivers: Sardines.DriverSettings[], driverDir: string = '', writelineFunc: any = null ) => {
+export const cacheDrivers = async (drivers: Sardines.DriverSettings[], sardinesDir: string = '', writelineFunc: any = null ) => {
   const writeline = writelineFunc ? writelineFunc : () => {}
   const driverCache :{[name: string]: any}= {}
-  // let hasDrivers = false
+
+  let driverDir = ''
+  if (sardinesDir) {
+      driverDir = path.join(sardinesDir, './drivers')
+      fs.mkdirSync(driverDir, {recursive: true})
+  }
+
   writeline(`export const drivers: {[key:string]:any} = {`)
   if (drivers && drivers.length) {
     for (let driver of drivers) {
@@ -51,22 +57,14 @@ export const cacheDrivers = async (drivers: Sardines.DriverSettings[], driverDir
           if (driverDir) {
             const driverFilepath = path.join(driverDir, `./${driver.name}.js`)
             dumpClass('f', driverClass, driverFilepath)
-            writeline(`  "${driver.name}": require('${driverFilepath}').f,`)
+            writeline(`  "${driver.name}": require('./drivers/${driver.name}.js').f,`)
           }
-          // hasDrivers = true
+
         }
       }
     }
   }
   writeline('}')
-
-  // if (hasDrivers) {
-  //   writeline('for (let d in drivers) {')
-  //   writeline('  if (drivers[d] && drivers[d].default) {')
-  //   writeline('     drivers[d] = drivers[d].default')
-  //   writeline('  }')
-  //   writeline('}')
-  // }
   
   return driverCache
 }
