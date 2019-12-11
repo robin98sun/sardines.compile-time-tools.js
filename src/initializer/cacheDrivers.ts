@@ -12,13 +12,13 @@ import { Source } from '../sourcing'
 import * as fs from 'fs'
 import * as path from 'path'
 
-export const dumpClass = async(className: string, packClass: any, filepath: string) => {
+export const dumpClass = (className: string, packClass: any, filepath: string) => {
   if (typeof packClass !== 'function') {
     throw `can not dump class [${packClass}], it's not a valid class`
   }
 
   let lineNumber = 0
-  const writeline = async(line: string) => {
+  const writeline = (line: string) => {
     if (lineNumber === 0) {
       fs.writeFileSync(filepath, line + '\n\n')
     } else {
@@ -27,16 +27,16 @@ export const dumpClass = async(className: string, packClass: any, filepath: stri
     lineNumber++
   }
 
-  await writeline(`export const ${className} = ` + packClass.toString())
+  writeline(`export const ${className} = ` + packClass.toString())
   for (let staticMethod in packClass) {
-    await writeline(`${className}.${staticMethod} = ` + packClass[staticMethod].toString())
+    writeline(`${className}.${staticMethod} = ` + packClass[staticMethod].toString())
   }
   for (let instMethod in packClass.prototype) {
-    await writeline(`${className}.prototype.${instMethod} = ` + packClass.prototype[instMethod].toString())
+    writeline(`${className}.prototype.${instMethod} = ` + packClass.prototype[instMethod].toString())
   }
 }
 
-export const cacheDrivers = async (drivers: Sardines.DriverSettings[], driverDir: string, writelineFunc: any = null ) => {
+export const cacheDrivers = async (drivers: Sardines.DriverSettings[], driverDir: string = '', writelineFunc: any = null ) => {
   const writeline = writelineFunc ? writelineFunc : () => {}
   const driverCache :{[name: string]: any}= {}
   let hasDrivers = false
@@ -48,8 +48,10 @@ export const cacheDrivers = async (drivers: Sardines.DriverSettings[], driverDir
         driverClass = utils.getDefaultClassFromPackage(driverClass)
         if (driverClass && typeof driverClass === 'function') {
           driverCache[driver.name] = driverClass
-          const driverFilepath = path.join(driverDir, `./${driver.name}.js`)
-          await dumpClass('f', driverClass, driverFilepath)
+          if (driverDir) {
+            const driverFilepath = path.join(driverDir, `./${driver.name}.js`)
+            dumpClass('f', driverClass, driverFilepath)
+          }
           writeline(`  "${driver.name}": require('${driverFilepath}').f,`)
           hasDrivers = true
         }
