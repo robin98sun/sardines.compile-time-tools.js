@@ -10,7 +10,7 @@
 import { Sardines, utils } from 'sardines-core'
 import { Source } from '../sourcing'
 import * as fs from 'fs'
-import * as path from 'path'
+// import * as path from 'path'
 
 export const dumpClass = (className: string, packClass: any, filepath: string) => {
   if (typeof packClass !== 'function') {
