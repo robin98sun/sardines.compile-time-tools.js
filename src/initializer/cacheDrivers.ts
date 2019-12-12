@@ -66,12 +66,14 @@ export const cacheDrivers = async (drivers: Sardines.DriverSettings[], sardinesD
 
   if (sardinesDir && Object.keys(driverCache).length > 0) {
     writeline(`import { utils } from 'sardines-core'`)
-    const driverVarNames: {[key:string]:number} = {}
+    const driverVarIndexes: {[key:string]:number} = {}
     const driverNameList = Object.keys(driverCache)
     for (let i = 0; i<driverNameList.length; i++) {
       const driverName = driverNameList[i]
-      driverVarNames[driverName] = i
+      driverVarIndexes[driverName] = i
+      const driverMainFilepath = Source.getMainFilePathOfPackage(driverName, './node_modules', './' + sardinesDir)
       writeline(`import * as driver_${i} from '${driverName}'`)
+      writeline(`import * as driver_source_${i} from '${driverMainFilepath}'`)
     }
 
     writeline(`
@@ -79,9 +81,12 @@ const getClassFromPackage = (packageName: string) => {
     let pkgcls = null
     switch (packageName) {
 `)
-    for (let driverName in driverVarNames) {
+    for (let driverName in driverVarIndexes) {
       writeline(`        case '${driverName}':
-            pkgcls = utils.getDefaultClassFromPackage(driver_${driverVarNames[driverName]})
+            pkgcls = utils.getDefaultClassFromPackage(driver_${driverVarIndexes[driverName]})
+            if (!pkgcls) {
+              pkgcls = utils.getDefaultClassFromPackage(driver_source_${driverVarIndexes[driverName]})
+            }
             break`)
     }
     writeline(`

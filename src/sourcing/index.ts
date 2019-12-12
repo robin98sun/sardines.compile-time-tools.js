@@ -121,6 +121,26 @@ export namespace Source {
         }
     }
 
+    // find the main js file in a package
+    export const getMainFilePathOfPackage = (packageName: string, nodeModulesDir: string, targetDir: string): string => {
+        let filepath = ''
+        if (!packageName || !nodeModulesDir || !targetDir) return filepath
+
+        const packageJsonFilepath = path.resolve(nodeModulesDir, `./${packageName}/package.json`)
+        if (!fs.existsSync(packageJsonFilepath)) return filepath
+        try {
+            const packageJson = JSON.parse(fs.readFileSync(packageJsonFilepath).toString())
+            if (!packageJson || !packageJson.main || typeof packageJson.main !== 'string') {
+                throw 'Invalid package.json file, or invalid main section in it'
+            }
+            const mainfilepath = path.resolve(packageJsonFilepath, './' + packageJson.main)
+            filepath = path.relative(targetDir, mainfilepath)
+        } catch (e) {
+            console.error('ERROR while tring to find package main file of package:', packageName, ', in node_modules:', nodeModulesDir, ', error:', e)
+        }
+        return filepath
+    }
+
     // Git
     export const getSourceFromGit = async(gitUrl:string, baseDir:string, options: { branch?: string, tag?: string, version?: string, initWorkDir?: boolean} = {}): Promise<string> => {
         if (!gitUrl) {
