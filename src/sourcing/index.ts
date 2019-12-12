@@ -133,7 +133,7 @@ export namespace Source {
             if (!packageJson || !packageJson.main || typeof packageJson.main !== 'string') {
                 throw 'Invalid package.json file, or invalid main section in it'
             }
-            const mainfilepath = path.resolve(nodeModulesDir, './' + packageJson.main)
+            const mainfilepath = path.resolve(nodeModulesDir, './' + packageName + '/' + packageJson.main)
             filepath = path.relative(targetDir, mainfilepath)
         } catch (e) {
             console.error('ERROR while tring to find package main file of package:', packageName, ', in node_modules:', nodeModulesDir, ', error:', e)
