@@ -72,7 +72,6 @@ export const cacheDrivers = async (drivers: Sardines.DriverSettings[], sardinesD
       const driverName = driverNameList[i]
       driverVarNames[driverName] = i
       writeline(`import * as driver_${i} from '${driverName}'`)
-      writeline(`import driver_default_${i} from '${driverName}'`)
     }
 
     writeline(`
@@ -82,10 +81,7 @@ const getClassFromPackage = (packageName: string) => {
 `)
     for (let driverName in driverVarNames) {
       writeline(`        case '${driverName}':
-            pkgcls = utils.getDefaultClassFromPackage(driver_default_${driverVarNames[driverName]})
-            if (!pkgcls) {
-                pkgcls = utils.getDefaultClassFromPackage(driver_${driverVarNames[driverName]})
-            }
+            pkgcls = utils.getDefaultClassFromPackage(driver_${driverVarNames[driverName]})
             break`)
     }
     writeline(`
