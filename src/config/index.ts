@@ -83,8 +83,9 @@ export const loadSardinesCacheByConfig = (config: any) => {
 
   const srcfile = `${srcRootDir}/${sardinesDir}/index.ts`
   const exefile = `${exeDir}/${sardinesDir}/index.js`
-
+  console.log('current dir:', __dirname)
   if (fs.existsSync(exefile)) {
+    console.log('here')
     return require(exefile)
   } else if (fs.existsSync(srcfile)) {
     return require(srcfile)
