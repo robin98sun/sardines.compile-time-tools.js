@@ -4,10 +4,50 @@ import { genProxyCode, genService, Service } from './serviceGenerator'
 export { Service, getServiceName } from './serviceGenerator'
 
 export const transform = async (appName: string, fileName: string, sardineFileName:string, sourceFilePath: string, identifiers: Map<string, IdentifierSyntax>, referencedTypes: string[], importedIds: string[], proxyIds: string[], line_handler: any) => {
-    // generate compiled file to replace original file
+
     let line_index = 0
     let line = ''
-    if (identifiers && identifiers.size) {
+
+    // Count useful functions
+    const operateIdentifiers = async (isCountOnly: boolean = false) => {
+        let count = 0
+        const iterator = identifiers.keys()
+        let key = iterator.next()
+        const directlyExportTypes = [
+            ts.SyntaxKind.InterfaceDeclaration,
+            ts.SyntaxKind.ObjectLiteralExpression,
+            ts.SyntaxKind.ArrayLiteralExpression
+        ]
+        while (!key.done) {
+            const item: IdentifierSyntax = identifiers.get(key.value)!
+            if (directlyExportTypes.indexOf(item.type) >=0) {
+                if (!isCountOnly) {
+                    line = `export { ${item.name} } from './${sardineFileName}'\n`
+                }
+            // } else if (item.type === ts.SyntaxKind.ObjectLiteralExpression || item.type === ts.SyntaxKind.ArrayLiteralExpression) {
+            //     line = `export { ${item.name} } from './${sardineFileName}'\n`
+            } else {
+                // This is a service
+                if (!isCountOnly) {
+                    const serviceInfo = genService(item, fileName, sourceFilePath)
+                    line = genProxyCode(appName, item, serviceInfo)
+                    sardineServices.push(serviceInfo)
+                } else {
+                    count++
+                }
+            }
+            if (!isCountOnly) {
+                line_index++
+                await line_handler(line, line_index)
+            }
+            key = iterator.next()
+        }
+        return count
+    }
+
+    // generate compiled file to replace original file
+    const serviceCount = await operateIdentifiers(true)
+    if (serviceCount) {
         line = `import * as origin from './${sardineFileName}'\n`
         await line_handler(line, line_index)
 
@@ -66,29 +106,7 @@ export const transform = async (appName: string, fileName: string, sardineFileNa
         line_index++
         await line_handler(line, line_index)
     }
-
-    const iterator = identifiers.keys()
-    let key = iterator.next()
-    const directlyExportTypes = [
-        ts.SyntaxKind.InterfaceDeclaration,
-        ts.SyntaxKind.ObjectLiteralExpression,
-        ts.SyntaxKind.ArrayLiteralExpression
-    ]
-    while (!key.done) {
-        const item: IdentifierSyntax = identifiers.get(key.value)!
-        if (directlyExportTypes.indexOf(item.type) >=0) {
-            line = `export { ${item.name} } from './${sardineFileName}'\n`
-        // } else if (item.type === ts.SyntaxKind.ObjectLiteralExpression || item.type === ts.SyntaxKind.ArrayLiteralExpression) {
-        //     line = `export { ${item.name} } from './${sardineFileName}'\n`
-        } else {
-            // This is a service
-            const serviceInfo = genService(item, fileName, sourceFilePath)
-            line = genProxyCode(appName, item, serviceInfo)
-            sardineServices.push(serviceInfo)
-        }
-        line_index++
-        await line_handler(line, line_index)
-        key = iterator.next()
-    }
+    
+    await operateIdentifiers()
     return sardineServices
 }
