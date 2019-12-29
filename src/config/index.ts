@@ -71,30 +71,3 @@ export const readSardinesConfigFile = (sardinesConfigFile: string):Sardines.Conf
 
   return sardinesConfig!
 }
-
-
-export const loadSardinesCacheByConfig = (config: any) => {
-  let srcRootDir = './src'
-  if (config && config.srcRootDir) srcRootDir = config.srcRootDir
-  let exeDir = './lib'
-  if (config && config.exeDir) exeDir = config.exeDir
-  let sardinesDir = 'sardines'
-  if (config && config.sardinesDir) sardinesDir = config.sardinesDir
-
-  const srcfile = `${srcRootDir}/${sardinesDir}/index.ts`
-  const exefile = `${exeDir}/${sardinesDir}/index.js`
-  console.log('current dir:', __dirname)
-  if (fs.existsSync(exefile)) {
-    console.log('here')
-    return require(exefile)
-  } else if (fs.existsSync(srcfile)) {
-    return require(srcfile)
-  }
-  return null
-}
-
-export const getDriverCacheByConfig = (config: any) => {
-  const sardinesCache = loadSardinesCacheByConfig(config)
-  if (sardinesCache && sardinesCache.drivers) return sardinesCache.drivers
-  return null
-}

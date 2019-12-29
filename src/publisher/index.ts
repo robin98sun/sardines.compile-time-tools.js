@@ -1,5 +1,5 @@
 import { utils, RepositoryClient } from 'sardines-core'
-import { readSardinesConfigFile, getDriverCacheByConfig } from '../config'
+import { readSardinesConfigFile } from '../config'
 import * as fs from 'fs'
 import { GitVersioning } from '../versioning'
 import { exit } from 'process'
@@ -23,6 +23,26 @@ export interface PublisherArguments {
     remote?: string,
     branch?: string,
     verbose?: boolean
+}
+
+
+export const loadSardinesCacheByConfig = (config: any) => {
+  let exeDir = './lib'
+  if (config && config.exeDir) exeDir = config.exeDir
+  let sardinesDir = 'sardines'
+  if (config && config.sardinesDir) sardinesDir = config.sardinesDir
+
+  const exefile = path.resolve(`${exeDir}/${sardinesDir}/index.js`)
+  if (fs.existsSync(exefile)) {
+    return require(exefile)
+  } 
+  return null
+}
+
+export const getDriverCacheByConfig = (config: any) => {
+  const sardinesCache = loadSardinesCacheByConfig(config)
+  if (sardinesCache && sardinesCache.drivers) return sardinesCache.drivers
+  return null
 }
 
 export const publish = async (args: PublisherArguments) => {
@@ -74,7 +94,6 @@ export const publish = async (args: PublisherArguments) => {
     // Read the sardines-config file
     const sardinesConfig = readSardinesConfigFile(sardinesConfigFile)
     RepositoryClient.setupRepositoryEntriesBySardinesConfig(sardinesConfig)
-
     const drivers = getDriverCacheByConfig(sardinesConfig)
     if (drivers) {
         RepositoryClient.setupDrivers(drivers)
