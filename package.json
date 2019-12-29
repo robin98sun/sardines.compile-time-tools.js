@@ -4,8 +4,8 @@
         "name": "Robin Sun"
     },
     "bin": {
-        "sardines-compiler": "lib/compiler/bin.js",
-        "sardines-publisher": "lib/publisher/bin.js",
+        "sardines-compile": "lib/compiler/bin.js",
+        "sardines-publish": "lib/publisher/bin.js",
         "sardines-init": "lib/initializer/bin.js",
         "sardines-repository-client": "lib/initializer/repo_client.js"
     },
