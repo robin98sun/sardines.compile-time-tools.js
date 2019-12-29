@@ -6,12 +6,15 @@ export { Service, getServiceName } from './serviceGenerator'
 export const transform = async (appName: string, fileName: string, sardineFileName:string, sourceFilePath: string, identifiers: Map<string, IdentifierSyntax>, referencedTypes: string[], importedIds: string[], proxyIds: string[], line_handler: any) => {
     // generate compiled file to replace original file
     let line_index = 0
-    let line = `import * as origin from './${sardineFileName}'\n`
-    await line_handler(line, line_index)
+    let line = ''
+    if (identifiers && identifiers.size) {
+        line = `import * as origin from './${sardineFileName}'\n`
+        await line_handler(line, line_index)
 
-    line_index++
-    line = `import { Core } from 'sardines-core'\n`
-    await line_handler(line, line_index)
+        line_index++
+        line = `import { Core } from 'sardines-core'\n`
+        await line_handler(line, line_index)
+    }
 
     const sardineServices: Service[] = []
     // import types referenced by source code
