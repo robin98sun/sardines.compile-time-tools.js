@@ -12,8 +12,18 @@ import { utils } from 'sardines-core'
 import * as fs from 'fs' 
 import * as path from 'path'
 import * as git from 'simple-git/promise'
+import { exec } from 'child_process'
+import { promisify } from 'util'
+
+const execAsync = promisify(exec)
 
 export namespace Source {
+    // execute command line
+    export const execCmd = async function (cmd: string) {
+        const {stdout, stderr} = await execAsync(cmd);
+        if (stderr) throw stderr
+        return stdout
+    }
     // Npm
     let npmInst: any = null
     export const npmCmd = (command: string, args: string[]) => {
@@ -142,7 +152,7 @@ export namespace Source {
     }
 
     // Git
-    export const getSourceFromGit = async(gitUrl:string, baseDir:string, options: { branch?: string, tag?: string, version?: string, initWorkDir?: boolean} = {}): Promise<string> => {
+    export const getSourceFromGit = async(gitUrl:string, baseDir:string, options: { application?: string, branch?: string, tag?: string, version?: string, initWorkDir?: boolean, verbose?: boolean} = {}): Promise<string> => {
         if (!gitUrl) {
             throw utils.unifyErrMesg(`Empty git url`, 'sourcing', 'git')
         }
@@ -163,13 +173,18 @@ export namespace Source {
         if (!repoName) {
             throw utils.unifyErrMesg(`Invalid git url: can not parse repository name`, 'sourcing', 'git')
         }
+        // extend work root dir
+        const appName = (options && options.application) ? options.application : repoName
+        const version = (options && options.version) ? options.version : '*'
+        workRoot = path.resolve(workRoot + '/', `./${appName}/${version}/`)
+
         // prepare work dir
         const workDir = path.resolve(`${workRoot}/`, `./${repoName}`)
         if (fs.existsSync(workDir)) {
             if (options && options.initWorkDir) {
                 fs.rmdirSync(workDir, {recursive: true})
             } else {
-                throw utils.unifyErrMesg(`target directory already exists: [${workDir}]`, 'sourcing', 'git')
+                return workDir
             }
         }
         if (!fs.existsSync(workRoot)) {
@@ -178,6 +193,9 @@ export namespace Source {
 
         // clone repository
         try {
+            if (options && options.verbose) {
+                console.log(`[source] going to git clone [${appName}@${version}] under dir ${workRoot}...`)
+            }
             await git(workRoot).clone(gitUrl)
             if (!fs.existsSync(workDir)) {
                 throw `git repository did not cloned to desired directory [${workDir}]`
@@ -188,6 +206,25 @@ export namespace Source {
             else if (options && options.tag) checkoutStr = options.tag
             if (!checkoutStr) checkoutStr = 'master'
             await git(workDir).checkout(checkoutStr)
+
+            if (options && options.verbose) {
+                console.log(`[source] source code of [${appName}@${version}] has been cloned and checked out`)
+            }
+
+            if (options && options.verbose) {
+                console.log(`[source] going to install node modules of [${appName}@${version}]...`)
+            }
+            const cmd = `cd ${workDir} && npm i && npm uninstall sardines-core && rm -rf node_modules/sardines-core`
+            try {
+                const stdout = await execCmd(cmd)
+                if (options && options.verbose) {
+                    console.log(`[source] node modules of [${appName}@${version}] have been installed using command [${cmd}]:`, stdout)
+                }
+            } catch (e) {
+                if (options && options.verbose) {
+                    console.error(`[source] Error when installing node modules of [${appName}@${version}] using command [${cmd}]:`, e)
+                }
+            }
         } catch (e) {
             throw utils.unifyErrMesg(e, 'sourcing', 'git')
         }
