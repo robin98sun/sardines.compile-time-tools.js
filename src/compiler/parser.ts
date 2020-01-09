@@ -22,6 +22,7 @@ export const legalExportTypes = [
     ts.SyntaxKind.InterfaceDeclaration,
     ts.SyntaxKind.ObjectLiteralExpression,
     ts.SyntaxKind.ArrayLiteralExpression,
+    ts.SyntaxKind.PropertyAccessExpression,
 ]
 
 export const illegalExportTypes = [
@@ -255,6 +256,16 @@ export function gatherExports(sourceFilePath: string): [Map<string, IdentifierSy
                 let isValueSyntax = false
                 for (let item of (node as ts.VariableDeclaration).getChildren()) {
                     if (isValueSyntax) {
+                        // DEBUG
+                        // if (node.getText().indexOf('agentState') >=0 && node.kind === ts.SyntaxKind.VariableDeclaration) {
+                        //     console.log('======================')
+                        //     console.log(ts.SyntaxKind[node.kind])
+                        //     printNode(node)
+                        //     console.log('======================')
+                        //     console.log('isExport:', isExport, ', name:', name, ', itemSyntax:')
+                        //     console.log('======================')
+                        // }
+                        // DEBU
                         const sourceId = item.getText()
                         if (item.kind === ts.SyntaxKind.Identifier && idnetifiers.has(sourceId)) {
                             const tmpSyntax = Object.assign({}, idnetifiers.get(sourceId))

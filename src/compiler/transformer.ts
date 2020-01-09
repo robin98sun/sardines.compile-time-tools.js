@@ -16,10 +16,12 @@ export const transform = async (appName: string, fileName: string, sardineFileNa
         const directlyExportTypes = [
             ts.SyntaxKind.InterfaceDeclaration,
             ts.SyntaxKind.ObjectLiteralExpression,
-            ts.SyntaxKind.ArrayLiteralExpression
+            ts.SyntaxKind.ArrayLiteralExpression,
+            ts.SyntaxKind.PropertyAccessExpression,
         ]
         while (!key.done) {
             const item: IdentifierSyntax = identifiers.get(key.value)!
+            
             if (directlyExportTypes.indexOf(item.type) >=0) {
                 if (!isCountOnly) {
                     line = `export { ${item.name} } from './${sardineFileName}'\n`
