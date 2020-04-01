@@ -18,6 +18,7 @@ export const transform = async (appName: string, fileName: string, sardineFileNa
             ts.SyntaxKind.ObjectLiteralExpression,
             ts.SyntaxKind.ArrayLiteralExpression,
             ts.SyntaxKind.PropertyAccessExpression,
+            ts.SyntaxKind.EnumDeclaration,
         ]
         while (!key.done) {
             const item: IdentifierSyntax = identifiers.get(key.value)!

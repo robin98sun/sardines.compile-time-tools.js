@@ -23,6 +23,7 @@ export const legalExportTypes = [
     ts.SyntaxKind.ObjectLiteralExpression,
     ts.SyntaxKind.ArrayLiteralExpression,
     ts.SyntaxKind.PropertyAccessExpression,
+    ts.SyntaxKind.EnumDeclaration,
 ]
 
 export const illegalExportTypes = [
@@ -220,7 +221,17 @@ export function gatherExports(sourceFilePath: string): [Map<string, IdentifierSy
             isAsync = false, 
             isExport = checkSyntaxType(node), 
             text = node.getText().replace(/export +/g, ''),
-            syntax: IdentifierSyntax = { name, isAsync, isExport, type: node.kind, typeStr: ts.SyntaxKind[node.kind], text } 
+            syntax: IdentifierSyntax = { name, isAsync, isExport, type: node.kind, typeStr: ts.SyntaxKind[node.kind], text }
+        // DEBUG
+        // if (node.getText().indexOf('StorageType') >=0 && node.kind === ts.SyntaxKind.VariableDeclaration) {
+        //     console.log('======================')
+        //     console.log('node kind:', ts.SyntaxKind[node.kind])
+        //     printNode(node)
+        //     console.log('======================')
+        //     console.log('isExport:', isExport)
+        //     console.log('======================')
+        // }
+        // DEBUG
         switch (node.kind) {
             case ts.SyntaxKind.VariableStatement:
                 for (let item of (node as ts.VariableStatement).declarationList.declarations) {
@@ -236,6 +247,9 @@ export function gatherExports(sourceFilePath: string): [Map<string, IdentifierSy
                 throw 'export default is not supported'
             case ts.SyntaxKind.InterfaceDeclaration:
                 syntax.name = (node as ts.InterfaceDeclaration).name.text
+                break
+            case ts.SyntaxKind.EnumDeclaration:
+                syntax.name = (node as ts.EnumDeclaration).name.text
                 break
             case ts.SyntaxKind.ClassDeclaration:
                 syntax.name = (node as ts.ClassDeclaration).name!.text
@@ -257,7 +271,7 @@ export function gatherExports(sourceFilePath: string): [Map<string, IdentifierSy
                 for (let item of (node as ts.VariableDeclaration).getChildren()) {
                     if (isValueSyntax) {
                         // DEBUG
-                        // if (node.getText().indexOf('agentState') >=0 && node.kind === ts.SyntaxKind.VariableDeclaration) {
+                        // if (node.getText().indexOf('StorageType') >=0 && node.kind === ts.SyntaxKind.VariableDeclaration) {
                         //     console.log('======================')
                         //     console.log(ts.SyntaxKind[node.kind])
                         //     printNode(node)
