@@ -37,6 +37,8 @@ if (params.help) {
       --drivers: drivers settings JSON string
       --cmd:     required, repository command name
       --data:    path of data file which in JSON format, or data in JSON string format
+      --init-parameters-file: path of file which contains init parameters
+      --provider-settings-file: path of file which contains provider settings
   `)
 }
 
@@ -90,6 +92,36 @@ if (params.data) {
       data = JSON.parse(params.data)
     } catch(e) {
       console.error(`invalid data string`, e)
+      proc.exit(1)
+    }
+  }
+}
+
+if (params['init-parameters-file']) {
+  const filepath= params['init-parameters-file']
+  if (fs.existsSync(filepath)) {
+    try {
+      if (!data) {
+        data = {}
+      }
+      data['initParams'] = JSON.parse(fs.readFileSync(filepath).toString())
+    } catch(e) {
+      console.error(`invalid init parameters file [${filepath}]`)
+      proc.exit(1)
+    }
+  }
+}
+
+if (params['provider-settings-file']) {
+  const filepath= params['provider-settings-file']
+  if (fs.existsSync(filepath)) {
+    try {
+      if (!data) {
+        data = {}
+      }
+      data['providers'] = JSON.parse(fs.readFileSync(filepath).toString())
+    } catch(e) {
+      console.error(`invalid provider settings file [${filepath}]`)
       proc.exit(1)
     }
   }
