@@ -109,5 +109,7 @@ exec(sardinesConfig!, params.cmd, data).then((res: any) => {
   console.log(`repository response for command [${params.cmd}]:`,utils.inspect(res))
 }).catch((e:any) => {
   console.error(`Error while invoking repository client [${params.cmd}]:`, e)
+  console.error(`input data:`, utils.inspect(data))
+  console.error(`input cmd:`, params.cmd)
   proc.exit(1)
 })
